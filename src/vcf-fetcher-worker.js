@@ -128,7 +128,7 @@ const extractColumnFromVcfInfo = (info, index) => {
   return col;
 }
 
-const vcfRecordToJson = (vcfRecord, chrName, chrOffset) => {
+const vcfRecordToJson = (vcfRecord, chrName, multires_chromName, chrOffset) => {
   const segments = [];
   const info = vcfRecord['INFO'];
  
@@ -141,17 +141,18 @@ const vcfRecordToJson = (vcfRecord, chrName, chrOffset) => {
       from: vcfRecord.POS + chrOffset,
       to: chrOffset,
       chrName,
+      multiresChrName: multires_chromName,
       chrOffset,
-      alleleCountMsa: info.AC_MSA[index],
+      alleleCountCases: info.AC_MSA[index],
       alleleCountControl: info.AC_CONTROL[index],
-      alleleFrequencyMsa: info.AF_MSA[index],
+      alleleFrequencyCases: info.AF_MSA[index],
       alleleFrequencyControl: info.AF_CONTROL[index],
       deltaAfAbs: Math.abs(info.AF_MSA[index] - info.AF_CONTROL[index]),
       deltaAf: info.AF_MSA[index] - info.AF_CONTROL[index],
-      alleleNumberMsa: info.AN_MSA[index],
+      alleleNumberCases: info.AN_MSA[index],
       alleleNumberControl: info.AN_CONTROL[index],
       //info: extractColumnFromVcfInfo(info, index),
-      row: null,
+      //row: null,
       type: 'variant',
       category: 'SNV'
     };
@@ -266,8 +267,6 @@ const tile = async (uid, z, x) => {
       const chromName = cumPositions[i].chr;
       const multires_chromName = chromName + "_" + (tsInfo.max_zoom - z);
       const chromStart = cumPositions[i].pos;
-      console.log(chromName, multires_chromName)
-
       const chromEnd = cumPositions[i].pos + chromLengths[chromName];
       tileValues.set(`${uid}.${z}.${x}`, []);
 
@@ -287,6 +286,7 @@ const tile = async (uid, z, x) => {
               const vcfJson = vcfRecordToJson(
                 vcfRecord,
                 chromName,
+                multires_chromName,
                 cumPositions[i].pos,
               );
               vcfJson.forEach((variant) => variants.push(variant));
@@ -299,12 +299,13 @@ const tile = async (uid, z, x) => {
 
           recordPromises.push(
             vcfFile.getLines(multires_chromName, startPos, endPos, (line) => {
-              console.log(line)
+              //console.log(line)
               const vcfRecord = tbiVCFParsers[vcfUrl].parseLine(line);
-              console.log(vcfRecord)
+              //console.log(vcfRecord)
               const vcfJson = vcfRecordToJson(
                 vcfRecord,
                 chromName,
+                multires_chromName,
                 cumPositions[i].pos,
               );
               vcfJson.forEach((variant) => variants.push(variant));

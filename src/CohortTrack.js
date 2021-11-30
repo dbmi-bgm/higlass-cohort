@@ -4,6 +4,8 @@ import { spawn, BlobWorker } from 'threads';
 import { PILEUP_COLORS } from './vcf-utils';
 import LegendUtils from './legend-utils';
 import sanitizeHtml from 'sanitize-html';
+import { format } from 'd3-format';
+import { scaleLinear, scaleLog } from 'd3-scale';
 
 const createColorTexture = (PIXI, colors) => {
   const colorTexRes = Math.max(2, Math.ceil(Math.sqrt(colors.length)));
@@ -136,6 +138,8 @@ const CohortTrack = (HGC, ...args) => {
       this.trackId = this.id;
       this.viewId = context.viewUid;
 
+      this.lollipopRadius = 4;
+
       // we scale the entire view up until a certain point
       // at which point we redraw everything to get rid of
       // artifacts
@@ -146,7 +150,7 @@ const CohortTrack = (HGC, ...args) => {
 
       // graphics for highliting reads under the cursor
       this.mouseOverGraphics = new HGC.libraries.PIXI.Graphics();
-      this.loadingText = new HGC.libraries.PIXI.Text('Loading', {
+      this.loadingText = new HGC.libraries.PIXI.Text('Initializing...', {
         fontSize: '12px',
         fontFamily: 'Arial',
         fill: 'grey',
@@ -157,35 +161,41 @@ const CohortTrack = (HGC, ...args) => {
       this.subTracks.push({
         legendUtils: new LegendUtils(HGC, 40, 200),
         legendGraphics: new HGC.libraries.PIXI.Graphics(),
+        infoGraphics: new HGC.libraries.PIXI.Graphics(),
         bgGraphics: new HGC.libraries.PIXI.Graphics(),
         afGraphics: new HGC.libraries.PIXI.Graphics(),
         height: 200,
-        yOffset: 0,
-        baseLineLevel: 106
+        yOffset: 5,
+        baseLineLevel: 106,
+        numLabels: 4
       });
 
       this.subTracks.push({
         legendUtils: new LegendUtils(HGC, 40, 50),
         legendGraphics: new HGC.libraries.PIXI.Graphics(),
+        infoGraphics: new HGC.libraries.PIXI.Graphics(),
         bgGraphics: new HGC.libraries.PIXI.Graphics(),
         afGraphics: new HGC.libraries.PIXI.Graphics(),
         height: 50,
-        yOffset: 220,
-        baseLineLevel: 0
+        yOffset: 225,
+        baseLineLevel: 0,
+        numLabels: 2
       });
 
       this.subTracks.forEach(subTrack => {
         subTrack.legendGraphics.position.y = subTrack.yOffset;
+        subTrack.infoGraphics.position.y = subTrack.yOffset;
         subTrack.afGraphics.position.y = subTrack.yOffset;
         subTrack.bgGraphics.position.y = subTrack.yOffset;
         this.pForeground.addChild(subTrack.legendGraphics);
+        this.pForeground.addChild(subTrack.infoGraphics);
         this.pMain.addChild(subTrack.bgGraphics);
         this.pMain.addChild(subTrack.afGraphics);
       });
 
      
       this.loadingText.x = 40;
-      this.loadingText.y = 110;
+      this.loadingText.y = 0;
 
       this.loadingText.anchor.x = 0;
       this.loadingText.anchor.y = 0;
@@ -203,7 +213,7 @@ const CohortTrack = (HGC, ...args) => {
         );
       }
 
-      this.pLabel.addChild(this.loadingText);
+      this.pForeground.addChild(this.loadingText);
       this.setUpShaderAndTextures();
 
     }
@@ -307,12 +317,20 @@ varying vec4 vColor;
       this.updateExistingGraphics();
     }
 
+    drawNotification(subtrack, text){
+      subtrack.legendUtils.createNotification(subtrack.infoGraphics, this.dimensions[0], text);
+    }
+
+    clearNotification(subtrack){
+      subtrack.legendUtils.clearNotification(subtrack.infoGraphics);
+    }
+
     createLegendGraphics() {
 
       const mainTrack = this.subTracks[0];
       mainTrack.legendUtils.resetLegend(mainTrack.legendGraphics);
-      mainTrack.legendUtils.createLegend(mainTrack.legendGraphics, 1, 4, 0, mainTrack.height/2);
-      mainTrack.legendUtils.createLegend(mainTrack.legendGraphics, 1, 4, 100, mainTrack.height/2, true);
+      mainTrack.legendUtils.createLegend(mainTrack.legendGraphics, 1, mainTrack.numLabels, 0, mainTrack.height/2);
+      mainTrack.legendUtils.createLegend(mainTrack.legendGraphics, 1, mainTrack.numLabels, 100, mainTrack.height/2, true);
       mainTrack.legendUtils.setBaseLineLevel(mainTrack.baseLineLevel);
       
 
@@ -321,7 +339,7 @@ varying vec4 vColor;
           return;
         }
         subTrack.legendUtils.resetLegend(subTrack.legendGraphics);
-        subTrack.legendUtils.createLegend(subTrack.legendGraphics, 1, 2, 0, subTrack.height);
+        subTrack.legendUtils.createLegend(subTrack.legendGraphics, 1, subTrack.numLabels, 0, subTrack.height);
       });
 
       this.subTracks.forEach(subTrack => {
@@ -330,16 +348,14 @@ varying vec4 vColor;
 
     }
 
-    getVariantsInView(){
-      const variantsInView = [];
-
+    updateVariantsInView(){
+      this.variantsInView = [];
       this.variantList.forEach((variant) =>{
         const xPos = this._xScale(variant.from);
         if(xPos > 0 && xPos < this.dimensions[0]){
-          variantsInView.push(variant);
+          this.variantsInView.push(variant);
         }
       });
-      return variantsInView;
     }
 
     drawLollipops(){
@@ -347,43 +363,106 @@ varying vec4 vColor;
       const mainTrack = this.subTracks[0];
       mainTrack.afGraphics.clear();
 
-      const variantsInView = this.getVariantsInView();
+      this.updateVariantsInView();
 
       let maxAF = 0;
-      variantsInView.forEach((variant) =>{
+      //console.log(this.variantsInView)
+      this.variantsInView.forEach((variant) =>{
         maxAF = Math.max(maxAF, variant.deltaAfAbs);
       });
       // round to closes decimal for legend
-      maxAF = parseFloat(maxAF.toExponential(0));
-      console.log(maxAF, parseFloat(maxAF.toExponential(0)))
-      mainTrack.legendUtils.resetLegend(mainTrack.legendGraphics);
       if(maxAF === 0){
         maxAF = 1e-1;
+      }else{
+        //console.log(maxAF)
+        const m = -Math.floor( Math.log10(maxAF) + 1) + 1;
+        const mm = 10 ** m;
+        maxAF = Math.ceil(maxAF * mm) / mm
+        //console.log(maxAF)
       }
+      
+      //maxAF = parseFloat(maxAF.toExponential(0));
+      
+      mainTrack.legendUtils.resetLegend(mainTrack.legendGraphics);
 
-      mainTrack.legendUtils.createLegend(mainTrack.legendGraphics, maxAF, 4, 0, mainTrack.height/2);
-      mainTrack.legendUtils.createLegend(mainTrack.legendGraphics, maxAF, 4, 100, mainTrack.height/2, true);
-      
-      
-      console.log(mainTrack.legendUtils.currentLegendLevels);
+      mainTrack.legendUtils.createLegend(mainTrack.legendGraphics, maxAF, mainTrack.numLabels, 0, mainTrack.height/2);
+      mainTrack.legendUtils.createLegend(mainTrack.legendGraphics, maxAF, mainTrack.numLabels, 100, mainTrack.height/2, true);
+
+      //console.log("LegenLevels:", mainTrack.legendUtils.currentLegendLevels);
       const cll = mainTrack.legendUtils.currentLegendLevels;
       const numLabels = mainTrack.legendUtils.numLabels;
-      const rangePos = [cll[0], cll[numLabels]];
-      const rangeNeg = [cll[numLabels+1], cll[cll.length - 1]];
-      console.log(rangePos, rangeNeg)
-      mainTrack.afGraphics.beginFill(HGC.utils.colorToHex('#0000ff'));
 
-      variantsInView.forEach((variant) =>{
+      const rangePos = [cll[0], cll[numLabels]];
+      const rangePosLargeScale = [cll[0], cll[numLabels-1]];
+      const rangePosSmallScale = [cll[numLabels-1], cll[numLabels]];
+
+      const rangeNeg = [cll[numLabels+1], cll[cll.length - 1]];
+      const rangeNegLargeScale = [cll[numLabels+2], cll[cll.length - 1]];
+      const rangeNegSmallScale = [cll[numLabels+1], cll[numLabels+2]];
+      //console.log("RagePos:", rangePos, rangePosLargeScale, rangePosSmallScale)
+      //console.log("RageNeg:", rangeNeg, rangeNegLargeScale, rangeNegSmallScale)
+
+      // Attach scales that map from value to lollipop height in display
+      let domainFromLargeScale = maxAF / (10 ** (mainTrack.numLabels-1));
+      let domainToLargeScale = maxAF;
+      mainTrack.logYScalePosLargeScale = scaleLog().domain([domainFromLargeScale, domainToLargeScale]).range([rangePosLargeScale[1], rangePosLargeScale[0]]);
+      let domainFromSmallScale = domainFromLargeScale / 1000;
+      let domainToSmallScale = domainFromLargeScale;
+      mainTrack.logYScalePosSmallScale = scaleLog().domain([domainFromSmallScale, domainToSmallScale]).range([rangePosSmallScale[1], rangePosSmallScale[0]]);
+
+      mainTrack.logYScaleNegLargeScale = scaleLog().domain([-domainFromLargeScale, -domainToLargeScale]).range([rangeNegLargeScale[0], rangeNegLargeScale[1]]);
+      mainTrack.logYScaleNegSmallScale = scaleLog().domain([-domainFromSmallScale, -domainToSmallScale]).range([rangeNegSmallScale[0], rangeNegSmallScale[1]]);
+
+      this.variantsInView.forEach((variant) =>{
         const xPos = this._xScale(variant.from+0.5);
-        this.drawLollipop(mainTrack.afGraphics, xPos, mainTrack.baseLineLevel, 10)
+        let yPos = 0;
+        mainTrack.afGraphics.beginFill(HGC.utils.colorToHex('#ff0000'));
+        if(variant.deltaAf >= 0){
+          yPos = rangePosSmallScale[1];
+          if(variant.deltaAf >= domainFromLargeScale){
+            yPos = mainTrack.logYScalePosLargeScale(variant.deltaAf);
+          }else if(variant.deltaAf >= domainFromSmallScale){
+            yPos = mainTrack.logYScalePosSmallScale(variant.deltaAf);
+          }else{
+            mainTrack.afGraphics.beginFill(HGC.utils.colorToHex('#000000'));
+            yPos = rangePosSmallScale[1]; // corresponds to 0
+          }
+          // used for mouseover
+          variant.xPosLollipop = xPos;
+          variant.yPosLollipop = yPos;
+
+          this.drawLollipop(mainTrack.afGraphics, xPos, mainTrack.baseLineLevel, mainTrack.baseLineLevel - yPos);
+        }
+        else{
+          yPos = rangeNegSmallScale[0];
+          mainTrack.afGraphics.beginFill(HGC.utils.colorToHex('#0000ff'));
+          //console.log(variant.from, variant.deltaAf, -domainFromSmallScale, -domainFromLargeScale)
+          if(variant.deltaAf <= -domainFromLargeScale){
+            yPos = mainTrack.logYScaleNegLargeScale(variant.deltaAf);
+          }else if(variant.deltaAf <= -domainFromSmallScale){
+            yPos = mainTrack.logYScaleNegSmallScale(variant.deltaAf);
+          }else{
+            mainTrack.afGraphics.beginFill(HGC.utils.colorToHex('#00ff00'));
+            yPos = rangeNegSmallScale[0]; // corresponds to 0
+          }
+
+          // used for mouseover
+          variant.xPosLollipop = xPos;
+          variant.yPosLollipop = yPos + 1 + this.lollipopRadius;
+          
+          // We are adding 1 to the baseline to account for the thickness of the zero line
+          this.drawLollipop(mainTrack.afGraphics, xPos, mainTrack.baseLineLevel+1, mainTrack.baseLineLevel - yPos);
+        }
+
       })
 
 
     }
 
     drawLollipop(graphics, xPos, baseLine, height){
-      graphics.drawRect(xPos, baseLine - height, 1, height);
-      graphics.drawCircle(xPos, baseLine - height, 4);
+      const yPos = baseLine - height;
+      graphics.drawRect(xPos, yPos, 1, height);
+      graphics.drawCircle(xPos, yPos, this.lollipopRadius);
     }
 
     updateExistingGraphics() {
@@ -439,7 +518,18 @@ varying vec4 vColor;
 
             this.drawLollipops();
 
-            console.log(this.variantList, this.zoomLevel)
+            if(this.variantList && this.variantList.length > 0){
+              if(!this.variantList[0]['multiresChrName'].endsWith("_0")){
+                this.drawNotification(this.subTracks[0], "Zoom in to see all variants");
+              }else{
+                this.clearNotification(this.subTracks[0]);
+              }
+            }
+            
+
+            
+
+            //console.log(this.variantList, this.zoomLevel)
 
             // remove and add again to place on top
             this.pMain.removeChild(this.mouseOverGraphics);
@@ -466,13 +556,15 @@ varying vec4 vColor;
       }
 
       if (this.fetching.size) {
-        this.loadingText.text = `Fetching... ${[...this.fetching]
-          .map((x) => x.split('|')[0])
-          .join(' ')}`;
+        this.loadingText.text = 'Fetching data...';
+        // this.loadingText.text = `Fetching... ${[...this.fetching]
+        //   .map((x) => x.split('|')[0])
+        //   .join(' ')}`;
       }
 
       if (this.rendering.size) {
-        this.loadingText.text = `Rendering... ${[...this.rendering].join(' ')}`;
+        this.loadingText.text = 'Rendering data...';
+        //this.loadingText.text = `Rendering... ${[...this.rendering].join(' ')}`;
       }
 
       if (!this.fetching.size && !this.rendering.size) {
@@ -487,97 +579,87 @@ varying vec4 vColor;
 
     getMouseOverHtml(trackX, trackYIn) {
 
-      // const trackY = this.valueScaleTransform.invert(track)
       this.mouseOverGraphics.clear();
       // Prevents 'stuck' read outlines when hovering quickly
       requestAnimationFrame(this.animate);
       const trackY = invY(trackYIn, this.valueScaleTransform);
-      const vHeight = this.options.variantHeight * this.valueScaleTransform.k;
+      //const vHeight = this.options.variantHeight * this.valueScaleTransform.k;
 
-      const filteredList = this.variantList.filter(
+      const padding = 2;
+
+      const filteredList = this.variantsInView.filter(
         (variant) =>
-          this._xScale(variant.from) <= trackX &&
-          trackX <= this._xScale(variant.to) &&
-          trackY >= variant.yTop + 1 &&
-          trackY <= variant.yTop + vHeight + 1,
+          variant.xPosLollipop - this.lollipopRadius - padding <= trackX &&
+          trackX <= variant.xPosLollipop + this.lollipopRadius + padding &&
+          trackY >= variant.yPosLollipop - padding &&
+          trackY <= variant.yPosLollipop + 2*this.lollipopRadius + padding,
       );
+      // console.log(trackX);
+      // console.log(this.variantsInView);
+      // console.log(filteredList);
 
-      let variantHtml = ``;
-      let typeHtml = ``;
-      let positionHtml = ``;
-      let alleleCountHtml = ``;
-      let alleleFrequencyHtml = ``;
-      let alleleNumberHtml = ``;
-      let sourceHtml = ``;
-      let svLength = ``;
-
-      const fontStyle = `line-height: 12px;font-family: monospace;font-size:14px;`;
-
+      
+      let mouseOverHtml = ``;
+  
       for (const variant of filteredList) {
-        const variantFrom = this._xScale(variant.from);
-        const variantTo = this._xScale(variant.to);
 
-        // draw outline
-        const width = variantTo - variantFrom;
-
-        this.mouseOverGraphics.lineStyle({
-          width: 1,
-          color: 0,
-        });
-        this.mouseOverGraphics.drawRect(
-          variantFrom,
-          variant.yTop,
-          width,
-          vHeight,
-        );
-        this.animate();
+        let variantHtml = ``;
+        let positionHtml = ``;
+        let alleleCountHtml = ``;
+        let alleleFrequencyHtml = ``;
+        let alleleNumberHtml = ``;
+        console.log(variant)
 
         let vRef = variant.ref.match(/.{1,15}/g).join('<br>');
         let vAlt = variant.alt.match(/.{1,15}/g).join('<br>');
 
         if(variant.category === "SNV"){
-          variantHtml += `<td style='${fontStyle} padding-right:5px;'><strong>${vRef} &rarr; ${vAlt}</strong></td>`;
-          positionHtml += `<td>${variant.chrName}:${
-            variant.from - variant.chrOffset
-          }</td>`;
-          sourceHtml += `<td>Gnomad</td>`;
-        } 
-        else {
-          variantHtml += `<td>Structural variant</td>`;
-          positionHtml += `<td>${variant.chrName}:${
-            variant.from - variant.chrOffset
-          }-${variant.chrName}:${variant.to - variant.chrOffset}</td>`;
-          sourceHtml += `<td>Gnomad SV</td>`;
-          svLength += `<td>${variant.info['SVLEN']}</td>`
-        }
+          positionHtml += `${variant.chrName}:${
+            format(',')(variant.from - variant.chrOffset)
+          }`;
+          variantHtml += `<td colspan='3'>Variant: <strong>${vRef} &rarr; ${vAlt}</strong> (${positionHtml})</td>`;
 
-        typeHtml += `<td>${this.capitalizeFirstLetter(variant.type)}</td>`;
-        alleleCountHtml += `<td>${variant.alleleCount}</td>`;
-        const af = Number.parseFloat(variant.alleleFrequency).toExponential(4);
-        alleleFrequencyHtml += `<td>${af}</td>`;
-        alleleNumberHtml += `<td>${variant.alleleNumber}</td>`;
+        } 
+
+        alleleCountHtml += `<td>${variant.alleleCountCases}</td><td>${variant.alleleCountControl}</td>`;
+        const afCases = Number.parseFloat(variant.alleleFrequencyCases) !== 0 ? Number.parseFloat(variant.alleleFrequencyCases).toExponential(2) : 0;
+        const afControl = Number.parseFloat(variant.alleleFrequencyControl) !== 0 ? Number.parseFloat(variant.alleleFrequencyControl).toExponential(2) : 0;
+        alleleFrequencyHtml += `<td>${afCases}&nbsp</td><td>${afControl}&nbsp</td>`;
+        alleleNumberHtml += `<td>${variant.alleleNumberCases}&nbsp</td><td>${variant.alleleNumberControl}&nbsp</td>`;
+
+        const borderCss = 'border: 1px solid #333333;';
+        mouseOverHtml +=
+          `<table style="margin-top:3px;${borderCss}">` +
+            `<tr style="background-color:#ececec;margin-top:3px;${borderCss}">${variantHtml}</tr>` +
+            `<tr><td></td><td>Cases</td><td>Control</td></tr>` +
+            `<tr><td>Allele Frequency:</td>${alleleFrequencyHtml}</tr>` +
+            `<tr><td>Allele Count:</td>${alleleCountHtml}</tr>` +
+            `<tr><td>Allele Number:</td>${alleleNumberHtml}</tr>` +
+          `</table>`;
         
       }
 
       if (filteredList.length > 0) {
-        let mouseOverHtml =
-          `<table>` +
-          `<tr><td>Variant:</td>${variantHtml}</tr>` +
-          `<tr><td>Type:</td>${typeHtml}</tr>` +
-          `<tr><td>Position:</td>${positionHtml}</tr>`;
-
-          if(svLength.length > 0){
-            mouseOverHtml += `<tr><td>SV length:</td>${svLength}</tr>`
+        
+        //return mouseOverHtml;
+        return sanitizeHtml(mouseOverHtml,{
+          allowedTags: ['table','tr','td','strong'],
+          allowedAttributes: {
+            'tr': ["style"],
+            'td': ["colspan"],
+            'table': ["style"],
+          },
+          allowedStyles: {
+            'tr': {
+              'background-color': [/^#(0x)?[0-9a-f]+$/i, /^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/],
+              'border': [/^1px solid #333333$/],
+            },
+            'table': {
+              'margin-top': [/^\d+(?:px|em|%)$/],
+              'border': [/^1px solid #333333$/],
+            }
           }
-
-          mouseOverHtml +=
-          `<tr><td>Allele Count:</td>${alleleCountHtml}</tr>` +
-          `<tr><td>Allele Frequency:</td>${alleleFrequencyHtml}</tr>` +
-          `<tr><td>Allele Number:</td>${alleleNumberHtml}</tr>` +
-          `<tr><td>Source:</td>${sourceHtml}</tr>` +
-          `</table>`;
-   
-        return sanitizeHtml(mouseOverHtml);
+        });
       }
 
       return '';
@@ -635,8 +717,8 @@ varying vec4 vColor;
       [this.pMain.position.x, this.pMain.position.y] = this.position;
       [this.pMouseOver.position.x, this.pMouseOver.position.y] = this.position;
 
-      [this.loadingText.x, this.loadingText.y] = newPosition;
-      this.loadingText.x += 30;
+      // [this.loadingText.x, this.loadingText.y] = newPosition;
+      // this.loadingText.x += 30;
     }
 
     movedY(dY) {
