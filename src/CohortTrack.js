@@ -134,6 +134,7 @@ const CohortTrack = (HGC, ...args) => {
 
       this.worker = worker;
       this.valueScaleTransform = HGC.libraries.d3Zoom.zoomIdentity;
+      this.HGC = HGC;
 
       this.trackId = this.id;
       this.viewId = context.viewUid;
@@ -156,69 +157,11 @@ const CohortTrack = (HGC, ...args) => {
         fill: 'grey',
       });
 
-      this.subTracks = [];
+      this.initSubTracks();
 
-      this.subTracks.push({
-        legendUtils: new LegendUtils(HGC, 40, 200),
-        legendGraphics: new HGC.libraries.PIXI.Graphics(),
-        infoGraphics: new HGC.libraries.PIXI.Graphics(),
-        bgGraphics: new HGC.libraries.PIXI.Graphics(),
-        afGraphics: new HGC.libraries.PIXI.Graphics(),
-        height: 200,
-        yOffset: 15,
-        baseLineLevel: 101,
-        numLabels: 4,
-        id: "main"
-      });
 
-      let curYOffset = 225;
-
-      Object.keys(this.options.colorScale).forEach(level => {
-        const height = 30;
-        const padding = 5;
-        this.subTracks.push({
-          legendUtils: new LegendUtils(HGC, 40, 50),
-          legendGraphics: new HGC.libraries.PIXI.Graphics(),
-          infoGraphics: new HGC.libraries.PIXI.Graphics(),
-          bgGraphics: new HGC.libraries.PIXI.Graphics(),
-          afGraphics: new HGC.libraries.PIXI.Graphics(),
-          height: height,
-          yOffset: curYOffset,
-          baseLineLevel: 0,
-          numLabels: 1,
-          id: level + "_case"
-        });
-
-        curYOffset += height + padding;
-
-        this.subTracks.push({
-          legendUtils: new LegendUtils(HGC, 40, 50),
-          legendGraphics: new HGC.libraries.PIXI.Graphics(),
-          infoGraphics: new HGC.libraries.PIXI.Graphics(),
-          bgGraphics: new HGC.libraries.PIXI.Graphics(),
-          afGraphics: new HGC.libraries.PIXI.Graphics(),
-          height: height,
-          yOffset: curYOffset,
-          baseLineLevel: 0,
-          numLabels: 1,
-          id: level + "_control"
-        });
-
-        curYOffset += height + padding;
-  
-      });
 
       
-      this.subTracks.forEach(subTrack => {
-        subTrack.legendGraphics.position.y = subTrack.yOffset;
-        subTrack.infoGraphics.position.y = subTrack.yOffset;
-        subTrack.afGraphics.position.y = subTrack.yOffset;
-        subTrack.bgGraphics.position.y = subTrack.yOffset;
-        this.pForeground.addChild(subTrack.legendGraphics);
-        this.pForeground.addChild(subTrack.infoGraphics);
-        this.pMain.addChild(subTrack.bgGraphics);
-        this.pMain.addChild(subTrack.afGraphics);
-      });
 
      
       this.loadingText.x = 40;
@@ -245,6 +188,75 @@ const CohortTrack = (HGC, ...args) => {
       this.colorScaleHex = {};
       Object.keys(this.options.colorScale).forEach(level => {
         this.colorScaleHex[level] = HGC.utils.colorToHex(this.options.colorScale[level]);
+      });
+
+    }
+
+    initSubTracks(){
+
+      this.subTracks = [];
+
+      const mainTrackHeight = this.options.mainDisplay === "deltaAF" ? 200 : 100;
+      this.subTracks.push({
+        legendUtils: new LegendUtils(this.HGC, 50, mainTrackHeight),
+        legendGraphics: new this.HGC.libraries.PIXI.Graphics(),
+        infoGraphics: new this.HGC.libraries.PIXI.Graphics(),
+        bgGraphics: new this.HGC.libraries.PIXI.Graphics(),
+        afGraphics: new this.HGC.libraries.PIXI.Graphics(),
+        height: mainTrackHeight,
+        yOffset: 15,
+        baseLineLevel: 101,
+        numLabels: 4,
+        id: "main"
+      });
+
+      let curYOffset = mainTrackHeight + 25;
+
+      Object.keys(this.options.colorScale).forEach(level => {
+        const height = 30;
+        const padding = 5;
+        this.subTracks.push({
+          legendUtils: new LegendUtils(this.HGC, 50, 50),
+          legendGraphics: new this.HGC.libraries.PIXI.Graphics(),
+          infoGraphics: new this.HGC.libraries.PIXI.Graphics(),
+          bgGraphics: new this.HGC.libraries.PIXI.Graphics(),
+          afGraphics: new this.HGC.libraries.PIXI.Graphics(),
+          height: height,
+          yOffset: curYOffset,
+          baseLineLevel: 0,
+          numLabels: 1,
+          id: level + "_case"
+        });
+
+        curYOffset += height + padding;
+
+        this.subTracks.push({
+          legendUtils: new LegendUtils(this.HGC, 50, 50),
+          legendGraphics: new this.HGC.libraries.PIXI.Graphics(),
+          infoGraphics: new this.HGC.libraries.PIXI.Graphics(),
+          bgGraphics: new this.HGC.libraries.PIXI.Graphics(),
+          afGraphics: new this.HGC.libraries.PIXI.Graphics(),
+          height: height,
+          yOffset: curYOffset,
+          baseLineLevel: 0,
+          numLabels: 1,
+          id: level + "_control"
+        });
+
+        curYOffset += height + padding;
+  
+      });
+
+      
+      this.subTracks.forEach(subTrack => {
+        subTrack.legendGraphics.position.y = subTrack.yOffset;
+        subTrack.infoGraphics.position.y = subTrack.yOffset;
+        subTrack.afGraphics.position.y = subTrack.yOffset;
+        subTrack.bgGraphics.position.y = subTrack.yOffset;
+        this.pForeground.addChild(subTrack.legendGraphics);
+        this.pForeground.addChild(subTrack.infoGraphics);
+        this.pMain.addChild(subTrack.bgGraphics);
+        this.pMain.addChild(subTrack.afGraphics);
       });
 
     }
@@ -303,8 +315,12 @@ const CohortTrack = (HGC, ...args) => {
 
       const mainTrack = this.subTracks[0];
       mainTrack.legendUtils.resetLegend(mainTrack.legendGraphics);
-      mainTrack.legendUtils.createLegend(mainTrack.legendGraphics, 1, mainTrack.numLabels, 0, mainTrack.height/2);
-      mainTrack.legendUtils.createLegend(mainTrack.legendGraphics, 1, mainTrack.numLabels, 100, mainTrack.height/2, true);
+      if(this.options.mainDisplay === "deltaAF"){
+        mainTrack.legendUtils.createLegend(mainTrack.legendGraphics, 1, mainTrack.numLabels, 0, mainTrack.height/2);
+        mainTrack.legendUtils.createLegend(mainTrack.legendGraphics, 1, mainTrack.numLabels, mainTrack.height/2, mainTrack.height/2, true);
+      }else{
+        mainTrack.legendUtils.createLegend(mainTrack.legendGraphics, 1, mainTrack.numLabels, 0, mainTrack.height);
+      }
       mainTrack.legendUtils.setBaseLineLevel(mainTrack.baseLineLevel);
       
 
@@ -374,7 +390,7 @@ const CohortTrack = (HGC, ...args) => {
 
         // Attach scales that map from value to lollipop height in display
         const domainFrom = Math.max(minAF/5, 1e-6);
-        console.log(minAF, domainFrom)
+        
         const domainTo = maxAF;
 
         subTrack['logYScalePos'] = scaleLog().domain([domainFrom, domainTo]).range([0, rangePos[1] - rangePos[0]]);
@@ -388,8 +404,11 @@ const CohortTrack = (HGC, ...args) => {
           let valueToPlot = variant.alleleFrequencyCases;
           if(subTrack.id.includes("control")){
             valueToPlot = this.options.controlGroup === "gnomad2" ? variant.alleleFrequencyGnomad2 : variant.alleleFrequencyGnomad3;
+            variant.yRangeRect2 = [cll[0] + subTrack.yOffset, cll[numLabels] + subTrack.yOffset]; // mouse over
+          }else{
+            variant.yRangeRect1 = [cll[0] + subTrack.yOffset, cll[numLabels] + subTrack.yOffset]; // mouse over
           }
-
+          
 
           if(valueToPlot >= domainFrom){
             const xPos = this._xScale(variant.from);
@@ -413,6 +432,8 @@ const CohortTrack = (HGC, ...args) => {
             subTrack.afGraphics.drawRect(xPos, yPos, rectWidth, 1 );
 
           }
+
+          
           
   
         })
@@ -430,6 +451,18 @@ const CohortTrack = (HGC, ...args) => {
 
       this.updateVariantsInView();
 
+      
+      if(this.options.mainDisplay === "deltaAF"){
+        this.drawLollipopsDeltaAF(mainTrack);
+      }else{
+        this.drawLollipopsFisher(mainTrack);
+      }
+
+
+    }
+
+    drawLollipopsDeltaAF(mainTrack){
+
       let maxAF = 0;
       
       this.variantsInView.forEach((variant) =>{
@@ -444,11 +477,9 @@ const CohortTrack = (HGC, ...args) => {
       if(maxAF === 0){
         maxAF = 1e-1;
       }else{
-        //console.log(maxAF)
         const m = -Math.floor( Math.log10(maxAF) + 1) + 1;
         const mm = 10 ** m;
         maxAF = Math.ceil(maxAF * mm) / mm
-        //console.log(maxAF)
       }
       
       //maxAF = parseFloat(maxAF.toExponential(0));
@@ -456,7 +487,7 @@ const CohortTrack = (HGC, ...args) => {
       mainTrack.legendUtils.resetLegend(mainTrack.legendGraphics);
 
       mainTrack.legendUtils.createLegend(mainTrack.legendGraphics, maxAF, mainTrack.numLabels, 0, mainTrack.height/2);
-      mainTrack.legendUtils.createLegend(mainTrack.legendGraphics, maxAF, mainTrack.numLabels, 100, mainTrack.height/2, true);
+      mainTrack.legendUtils.createLegend(mainTrack.legendGraphics, maxAF, mainTrack.numLabels, mainTrack.height/2, mainTrack.height/2, true);
 
       //console.log("LegenLevels:", mainTrack.legendUtils.currentLegendLevels);
       const cll = mainTrack.legendUtils.currentLegendLevels;
@@ -501,7 +532,7 @@ const CohortTrack = (HGC, ...args) => {
           variant.xPosLollipop = xPos;
           variant.yPosLollipop = yPos + mainTrack.yOffset - 2;
 
-          this.drawLollipop(mainTrack.afGraphics, xPos, mainTrack.baseLineLevel, mainTrack.baseLineLevel - yPos);
+          this.drawLollipop(mainTrack.afGraphics, this.colorScaleHex[variant.colorCategory], xPos, mainTrack.baseLineLevel, mainTrack.baseLineLevel - yPos);
         }
         else{
           yPos = rangeNegSmallScale[0];
@@ -519,17 +550,85 @@ const CohortTrack = (HGC, ...args) => {
           variant.yPosLollipop = yPos + mainTrack.yOffset - 2;
           
           // We are adding 1 to the baseline to account for the thickness of the zero line
-          this.drawLollipop(mainTrack.afGraphics, xPos, mainTrack.baseLineLevel+1, mainTrack.baseLineLevel - yPos);
+          this.drawLollipop(mainTrack.afGraphics, this.colorScaleHex[variant.colorCategory], xPos, mainTrack.baseLineLevel+1, mainTrack.baseLineLevel - yPos);
         }
 
       });
 
-
     }
 
-    drawLollipop(graphics, xPos, baseLine, height){
+    drawLollipopsFisher(mainTrack){
+
+      let maxAF = 0;
+      
+      this.variantsInView.forEach((variant) =>{
+        if(this.options.controlGroup === "gnomad2"){
+          if(variant.fisherGnomad2logp !== "NA"){
+            maxAF = Math.max(maxAF, variant.fisherGnomad2logp);
+          }
+        }else{
+          if(variant.fisherGnomad3logp !== "NA"){
+            maxAF = Math.max(maxAF, variant.fisherGnomad3logp);
+          }
+        }
+      });
+      // round to closes decimal for legend
+
+      if(maxAF === 0){
+        maxAF = 1;
+      }else{
+        maxAF = Math.ceil(maxAF);
+      }
+      console.log(maxAF);
+
+      mainTrack.legendUtils.resetLegend(mainTrack.legendGraphics);
+      mainTrack.legendUtils.createLegend(mainTrack.legendGraphics, maxAF, mainTrack.numLabels, 0, mainTrack.height, false, true);
+
+      const cll = mainTrack.legendUtils.currentLegendLevels;
+      const numLabels = mainTrack.legendUtils.numLabels;
+      const rangePos = [cll[0], cll[numLabels]];
+      console.log(rangePos)
+      mainTrack.linearYScalePos = scaleLinear().domain([0, maxAF]).range([rangePos[1], rangePos[0]]);
+
+      this.variantsInView.forEach((variant) =>{
+        const xPos = this._xScale(variant.from+0.5);
+        let yPos = mainTrack.baseLineLevel;
+        let fisher = -1;
+        if(this.options.controlGroup === "gnomad2"){
+          if(variant.fisherGnomad2logp !== "NA"){
+            fisher = variant.fisherGnomad2logp;
+          }
+        }else{
+          if(variant.fisherGnomad3logp !== "NA"){
+            fisher = variant.fisherGnomad3logp;
+          }
+        }
+        
+        mainTrack.afGraphics.beginFill(this.colorScaleHex[variant.colorCategory]);
+        if(fisher >= 0){
+          yPos = mainTrack.linearYScalePos(fisher);
+          
+          
+        }
+        // used for mouseover
+        variant.xPosLollipop = xPos;
+        variant.yPosLollipop = yPos + mainTrack.yOffset - 2;
+
+        this.drawLollipop(mainTrack.afGraphics, this.colorScaleHex[variant.colorCategory], xPos, mainTrack.baseLineLevel, mainTrack.baseLineLevel - yPos);
+        
+
+      });
+
+
+      
+    }
+
+
+    drawLollipop(graphics, color, xPos, baseLine, height){
       const yPos = baseLine - height;
+      graphics.beginFill(color, 0.5);
       graphics.drawRect(xPos, yPos, 1, height);
+      graphics.beginFill(color, 0.6);
       graphics.drawCircle(xPos, yPos, this.lollipopRadius);
     }
 
@@ -654,8 +753,12 @@ const CohortTrack = (HGC, ...args) => {
         (variant) =>
           variant.xPosLollipop - this.lollipopRadius - padding <= trackX &&
           trackX <= variant.xPosLollipop + this.lollipopRadius + padding &&
-          trackY >= variant.yPosLollipop - padding &&
-          trackY <= variant.yPosLollipop + 2*this.lollipopRadius + padding,
+          ((trackY >= variant.yPosLollipop - padding &&
+          trackY <= variant.yPosLollipop + 2*this.lollipopRadius + padding) || 
+          (trackY >= variant.yRangeRect1[0] &&
+            trackY <= variant.yRangeRect1[1]) || 
+          (trackY >= variant.yRangeRect2[0] &&
+            trackY <= variant.yRangeRect2[1])),
       );
       // console.log(trackX);
       // console.log(this.variantsInView);
@@ -931,6 +1034,7 @@ CohortTrack.config = {
     'variantHeight',
     'maxTileWidth',
     'controlGroup',
+    'mainDisplay'
     // 'minZoom'
   ],
   defaultOptions: {
@@ -944,7 +1048,8 @@ CohortTrack.config = {
     showMousePosition: false,
     variantHeight: 12,
     maxTileWidth: 2e5,
-    controlGroup: 'gnomad2'
+    controlGroup: 'gnomad2',
+    mainDisplay: 'fisher' // 'fisher', 'deltaAF'
   },
   optionsInfo: {
 

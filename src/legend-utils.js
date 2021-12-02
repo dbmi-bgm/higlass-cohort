@@ -13,7 +13,7 @@ class LegendUtils {
     legendGraphics.removeChildren();
     legendGraphics.clear();
     legendGraphics.beginFill(this.HGC.utils.colorToHex('#ffffff'));
-    legendGraphics.drawRect(0, 0, this.legendWidth, this.legendHeight);
+    legendGraphics.drawRect(0, 0, this.legendWidth, this.legendHeight+5);
     this.currentLegendLevels = [];
 
   }
@@ -41,8 +41,8 @@ class LegendUtils {
   }
 
 
-  createLegend(legendGraphics, maxValue, numLabels, yOffset, height, inverted=false){
-    const legendTexts = this.generateLabelTexts(maxValue, numLabels, inverted);
+  createLegend(legendGraphics, maxValue, numLabels, yOffset, height, inverted=false, linear=false){
+    const legendTexts = this.generateLabelTexts(maxValue, numLabels, inverted, linear);
     this.numLabels = numLabels;
 
     const distBetweenLabels = height / legendTexts.length;
@@ -71,12 +71,22 @@ class LegendUtils {
 
   
 
-  generateLabelTexts(maxValue, numLabels, inverted){
+  generateLabelTexts(maxValue, numLabels, inverted, linear){
     const texts = [];
-    for (let step = 0; step < numLabels; step++) {
-      const num = maxValue/(10 ** step);
-      texts.push(num.toExponential(0).toLocaleString());
+    if(linear){
+      for (let step = 0; step < numLabels; step++) {
+        const num = maxValue * (numLabels-step)/(numLabels);
+        texts.push(num.toLocaleString(
+          'en-us', {minimumFractionDigits: 2, maximumFractionDigits: 2}
+        ));
+      }
+    }else{
+      for (let step = 0; step < numLabels; step++) {
+        const num = maxValue/(10 ** step);
+        texts.push(num.toExponential(0).toLocaleString());
+      }
     }
+    
     texts.push("0");
     if(inverted){
       return texts.reverse();
