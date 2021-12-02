@@ -165,23 +165,50 @@ const CohortTrack = (HGC, ...args) => {
         bgGraphics: new HGC.libraries.PIXI.Graphics(),
         afGraphics: new HGC.libraries.PIXI.Graphics(),
         height: 200,
-        yOffset: 5,
-        baseLineLevel: 106,
-        numLabels: 4
+        yOffset: 15,
+        baseLineLevel: 101,
+        numLabels: 4,
+        id: "main"
       });
 
-      this.subTracks.push({
-        legendUtils: new LegendUtils(HGC, 40, 50),
-        legendGraphics: new HGC.libraries.PIXI.Graphics(),
-        infoGraphics: new HGC.libraries.PIXI.Graphics(),
-        bgGraphics: new HGC.libraries.PIXI.Graphics(),
-        afGraphics: new HGC.libraries.PIXI.Graphics(),
-        height: 50,
-        yOffset: 225,
-        baseLineLevel: 0,
-        numLabels: 2
+      let curYOffset = 225;
+
+      Object.keys(this.options.colorScale).forEach(level => {
+        const height = 30;
+        const padding = 5;
+        this.subTracks.push({
+          legendUtils: new LegendUtils(HGC, 40, 50),
+          legendGraphics: new HGC.libraries.PIXI.Graphics(),
+          infoGraphics: new HGC.libraries.PIXI.Graphics(),
+          bgGraphics: new HGC.libraries.PIXI.Graphics(),
+          afGraphics: new HGC.libraries.PIXI.Graphics(),
+          height: height,
+          yOffset: curYOffset,
+          baseLineLevel: 0,
+          numLabels: 1,
+          id: level + "_case"
+        });
+
+        curYOffset += height + padding;
+
+        this.subTracks.push({
+          legendUtils: new LegendUtils(HGC, 40, 50),
+          legendGraphics: new HGC.libraries.PIXI.Graphics(),
+          infoGraphics: new HGC.libraries.PIXI.Graphics(),
+          bgGraphics: new HGC.libraries.PIXI.Graphics(),
+          afGraphics: new HGC.libraries.PIXI.Graphics(),
+          height: height,
+          yOffset: curYOffset,
+          baseLineLevel: 0,
+          numLabels: 1,
+          id: level + "_control"
+        });
+
+        curYOffset += height + padding;
+  
       });
 
+      
       this.subTracks.forEach(subTrack => {
         subTrack.legendGraphics.position.y = subTrack.yOffset;
         subTrack.infoGraphics.position.y = subTrack.yOffset;
@@ -214,7 +241,11 @@ const CohortTrack = (HGC, ...args) => {
       }
 
       this.pForeground.addChild(this.loadingText);
-      this.setUpShaderAndTextures();
+
+      this.colorScaleHex = {};
+      Object.keys(this.options.colorScale).forEach(level => {
+        this.colorScaleHex[level] = HGC.utils.colorToHex(this.options.colorScale[level]);
+      });
 
     }
 
@@ -233,67 +264,10 @@ const CohortTrack = (HGC, ...args) => {
       return [tileMinX, tileMaxX];
     }
 
-    setUpShaderAndTextures() {
-      const colorDict = PILEUP_COLORS;
+    setUpShaderAndTextures(){
 
-      if (this.options && this.options.colorScale) {
-        [
-          colorDict.VARIANT,
-          colorDict.INSERTION,
-          colorDict.DELETION,
-          colorDict.INVERSION,
-          colorDict.DUPLICATION
-        ] = this.options.colorScale.map((x) => x);
-      }
-
-      const colors = Object.values(colorDict);
-
-      const [colorMapTex, colorMapTexRes] = createColorTexture(
-        HGC.libraries.PIXI,
-        colors,
-      );
-      const uniforms = new HGC.libraries.PIXI.UniformGroup({
-        uColorMapTex: colorMapTex,
-        uColorMapTexRes: colorMapTexRes,
-      });
-      this.shader = HGC.libraries.PIXI.Shader.from(
-        `
-    attribute vec2 position;
-    attribute float aColorIdx;
-
-    uniform mat3 projectionMatrix;
-    uniform mat3 translationMatrix;
-
-    uniform sampler2D uColorMapTex;
-    uniform float uColorMapTexRes;
-
-    varying vec4 vColor;
-
-    void main(void)
-    {
-        // Half a texel (i.e., pixel in texture coordinates)
-        float eps = 0.5 / uColorMapTexRes;
-        float colorRowIndex = floor((aColorIdx + eps) / uColorMapTexRes);
-        vec2 colorTexIndex = vec2(
-          (aColorIdx / uColorMapTexRes) - colorRowIndex + eps,
-          (colorRowIndex / uColorMapTexRes) + eps
-        );
-        vColor = texture2D(uColorMapTex, colorTexIndex);
-
-        gl_Position = vec4((projectionMatrix * translationMatrix * vec3(position, 1.0)).xy, 0.0, 1.0);
     }
 
-`,
-        `
-varying vec4 vColor;
-
-    void main(void) {
-        gl_FragColor = vColor;
-    }
-`,
-        uniforms,
-      );
-    }
 
     rerender(options) {
       super.rerender(options);
@@ -358,6 +332,97 @@ varying vec4 vColor;
       });
     }
 
+    drawBarCharts(){
+
+      console.log(this.variantsInView);
+      let maxAF = 0;
+      let minAF = 1;
+
+      this.variantsInView.forEach((variant) =>{
+        maxAF = Math.max(maxAF, variant.alleleFrequencyCases);
+        minAF = variant.alleleFrequencyCases > 0 ? Math.min(minAF, variant.alleleFrequencyCases) : minAF;
+        if(this.options.controlGroup === "gnomad2"){
+          maxAF = variant.alleleFrequencyGnomad2 !== "NA" ? Math.max(maxAF, variant.alleleFrequencyGnomad2) : maxAF;
+          minAF = variant.alleleFrequencyGnomad2 !== "NA" && variant.alleleFrequencyGnomad2 > 0 ? Math.min(minAF, variant.alleleFrequencyGnomad2) : minAF;
+        }else{
+          maxAF = variant.alleleFrequencyGnomad3 !== "NA" ? Math.max(maxAF, variant.alleleFrequencyGnomad3) : maxAF;
+          minAF = variant.alleleFrequencyGnomad3 !== "NA" && variant.alleleFrequencyGnomad3 > 0 ? Math.min(minAF, variant.alleleFrequencyGnomad3) : minAF;
+        }
+      });
+
+      if(maxAF === 0){
+        maxAF = 1e-1;
+      }else{
+        const m = -Math.floor( Math.log10(maxAF) + 1) + 1;
+        const mm = 10 ** m;
+        maxAF = Math.ceil(maxAF * mm) / mm
+      }
+
+      this.subTracks.forEach((subTrack,i) => {
+        if(i === 0){
+          return;
+        }
+        subTrack.afGraphics.clear();
+        subTrack.legendUtils.resetLegend(subTrack.legendGraphics);
+        subTrack.legendUtils.createLegend(subTrack.legendGraphics, maxAF, subTrack.numLabels, 0, subTrack.height);
+
+        const cll = subTrack.legendUtils.currentLegendLevels;
+        const numLabels = subTrack.legendUtils.numLabels;
+
+        const rangePos = [cll[0], cll[numLabels]];
+
+
+        // Attach scales that map from value to lollipop height in display
+        const domainFrom = Math.max(minAF/5, 1e-6);
+        console.log(minAF, domainFrom)
+        const domainTo = maxAF;
+
+        subTrack['logYScalePos'] = scaleLog().domain([domainFrom, domainTo]).range([0, rangePos[1] - rangePos[0]]);
+
+        this.variantsInView.forEach((variant) =>{
+
+          if(!subTrack.id.includes(variant.colorCategory)){
+            return
+          }
+
+          let valueToPlot = variant.alleleFrequencyCases;
+          if(subTrack.id.includes("control")){
+            valueToPlot = this.options.controlGroup === "gnomad2" ? variant.alleleFrequencyGnomad2 : variant.alleleFrequencyGnomad3;
+          }
+
+
+          if(valueToPlot >= domainFrom){
+            const xPos = this._xScale(variant.from);
+            const rectWidth = Math.max(this._xScale(variant.from+1) - xPos,1);
+            const rectHeight = subTrack.logYScalePos(valueToPlot);
+
+            const yPos = rangePos[1] - rectHeight + 1;
+            subTrack.afGraphics.beginFill(this.colorScaleHex[variant.colorCategory]);
+
+            subTrack.afGraphics.drawRect(xPos, yPos, rectWidth, rectHeight );
+            
+          }else if(valueToPlot >= 0){
+
+            const xPos = this._xScale(variant.from);
+            const rectWidth = Math.max(this._xScale(variant.from+1) - xPos,1);
+            const rectHeight = subTrack.logYScalePos(valueToPlot);
+
+            const yPos = rangePos[1] - rectHeight + 1;
+            subTrack.afGraphics.beginFill(this.colorScaleHex[variant.colorCategory]);
+
+            subTrack.afGraphics.drawRect(xPos, yPos, rectWidth, 1 );
+
+          }
+          
+  
+        })
+
+      });
+
+      
+
+    }
+
     drawLollipops(){
 
       const mainTrack = this.subTracks[0];
@@ -366,11 +431,16 @@ varying vec4 vColor;
       this.updateVariantsInView();
 
       let maxAF = 0;
-      //console.log(this.variantsInView)
+      
       this.variantsInView.forEach((variant) =>{
-        maxAF = Math.max(maxAF, variant.deltaAfAbs);
+        if(this.options.controlGroup === "gnomad2"){
+          maxAF = Math.max(maxAF, variant.deltaAfAbsGnomad2);
+        }else{
+          maxAF = Math.max(maxAF, variant.deltaAfAbsGnomad3);
+        }
       });
       // round to closes decimal for legend
+
       if(maxAF === 0){
         maxAF = 1e-1;
       }else{
@@ -416,45 +486,43 @@ varying vec4 vColor;
       this.variantsInView.forEach((variant) =>{
         const xPos = this._xScale(variant.from+0.5);
         let yPos = 0;
-        mainTrack.afGraphics.beginFill(HGC.utils.colorToHex('#ff0000'));
-        if(variant.deltaAf >= 0){
+        const deltaAF = this.options.controlGroup === "gnomad2" ? variant.deltaAfGnomad2 : variant.deltaAfGnomad3;
+        mainTrack.afGraphics.beginFill(this.colorScaleHex[variant.colorCategory]);
+        if(deltaAF >= 0){
           yPos = rangePosSmallScale[1];
-          if(variant.deltaAf >= domainFromLargeScale){
-            yPos = mainTrack.logYScalePosLargeScale(variant.deltaAf);
-          }else if(variant.deltaAf >= domainFromSmallScale){
-            yPos = mainTrack.logYScalePosSmallScale(variant.deltaAf);
+          if(deltaAF >= domainFromLargeScale){
+            yPos = mainTrack.logYScalePosLargeScale(deltaAF);
+          }else if(deltaAF >= domainFromSmallScale){
+            yPos = mainTrack.logYScalePosSmallScale(deltaAF);
           }else{
-            mainTrack.afGraphics.beginFill(HGC.utils.colorToHex('#000000'));
             yPos = rangePosSmallScale[1]; // corresponds to 0
           }
           // used for mouseover
           variant.xPosLollipop = xPos;
-          variant.yPosLollipop = yPos;
+          variant.yPosLollipop = yPos + mainTrack.yOffset - 2;
 
           this.drawLollipop(mainTrack.afGraphics, xPos, mainTrack.baseLineLevel, mainTrack.baseLineLevel - yPos);
         }
         else{
           yPos = rangeNegSmallScale[0];
-          mainTrack.afGraphics.beginFill(HGC.utils.colorToHex('#0000ff'));
           //console.log(variant.from, variant.deltaAf, -domainFromSmallScale, -domainFromLargeScale)
-          if(variant.deltaAf <= -domainFromLargeScale){
-            yPos = mainTrack.logYScaleNegLargeScale(variant.deltaAf);
-          }else if(variant.deltaAf <= -domainFromSmallScale){
-            yPos = mainTrack.logYScaleNegSmallScale(variant.deltaAf);
+          if(deltaAF <= -domainFromLargeScale){
+            yPos = mainTrack.logYScaleNegLargeScale(deltaAF);
+          }else if(deltaAF <= -domainFromSmallScale){
+            yPos = mainTrack.logYScaleNegSmallScale(deltaAF);
           }else{
-            mainTrack.afGraphics.beginFill(HGC.utils.colorToHex('#00ff00'));
             yPos = rangeNegSmallScale[0]; // corresponds to 0
           }
 
           // used for mouseover
           variant.xPosLollipop = xPos;
-          variant.yPosLollipop = yPos + 1 + this.lollipopRadius;
+          variant.yPosLollipop = yPos + mainTrack.yOffset - 2;
           
           // We are adding 1 to the baseline to account for the thickness of the zero line
           this.drawLollipop(mainTrack.afGraphics, xPos, mainTrack.baseLineLevel+1, mainTrack.baseLineLevel - yPos);
         }
 
-      })
+      });
 
 
     }
@@ -517,17 +585,12 @@ varying vec4 vColor;
             this.pMain.x = this.position[0];
 
             this.drawLollipops();
+            this.drawBarCharts();
 
-            if(this.variantList && this.variantList.length > 0){
-              if(!this.variantList[0]['multiresChrName'].endsWith("_0")){
-                this.drawNotification(this.subTracks[0], "Zoom in to see all variants");
-              }else{
-                this.clearNotification(this.subTracks[0]);
-              }
+            this.clearNotification(this.subTracks[0]);
+            if(this.maxZoom !== this.calculateZoomLevel()){
+              this.drawNotification(this.subTracks[0], "Zoom in to see all variants");
             }
-            
-
-            
 
             //console.log(this.variantList, this.zoomLevel)
 
@@ -604,6 +667,8 @@ varying vec4 vColor;
       for (const variant of filteredList) {
 
         let variantHtml = ``;
+        let mostSevereConsequenceHtml = ``;
+        let consequenceLevelHtml = ``;
         let positionHtml = ``;
         let alleleCountHtml = ``;
         let alleleFrequencyHtml = ``;
@@ -617,21 +682,39 @@ varying vec4 vColor;
           positionHtml += `${variant.chrName}:${
             format(',')(variant.from - variant.chrOffset)
           }`;
-          variantHtml += `<td colspan='3'>Variant: <strong>${vRef} &rarr; ${vAlt}</strong> (${positionHtml})</td>`;
-
+          mostSevereConsequenceHtml += `Most severe consequence: <strong>${variant.mostSevereConsequence}</strong>`;
+          consequenceLevelHtml += `Consequence level: <strong>${this.capitalizeFirstLetter(variant.colorCategory.toLowerCase())}</strong>`;
+          variantHtml += `<td colspan='4'>
+              Variant: <strong>${vRef} &rarr; ${vAlt}</strong> (${positionHtml}) <br/>
+              ${mostSevereConsequenceHtml} <br/>
+              ${consequenceLevelHtml}
+            </td>`;
+          
         } 
 
-        alleleCountHtml += `<td>${variant.alleleCountCases}</td><td>${variant.alleleCountControl}</td>`;
+        const acGnomad2 = variant.alleleCountGnomad2 !== "NA" ? variant.alleleCountGnomad2 : "-";
+        const acGnomad3 = variant.alleleCountGnomad3 !== "NA" ? variant.alleleCountGnomad3 : "-";
+        alleleCountHtml += `<td>${variant.alleleCountCases}</td><td>${acGnomad2}</td><td>${acGnomad3}</td>`;
         const afCases = Number.parseFloat(variant.alleleFrequencyCases) !== 0 ? Number.parseFloat(variant.alleleFrequencyCases).toExponential(2) : 0;
-        const afControl = Number.parseFloat(variant.alleleFrequencyControl) !== 0 ? Number.parseFloat(variant.alleleFrequencyControl).toExponential(2) : 0;
-        alleleFrequencyHtml += `<td>${afCases}&nbsp</td><td>${afControl}&nbsp</td>`;
-        alleleNumberHtml += `<td>${variant.alleleNumberCases}&nbsp</td><td>${variant.alleleNumberControl}&nbsp</td>`;
+        let afGnomad2 = "-";
+        if(variant.alleleFrequencyGnomad2 !== "NA"){
+          afGnomad2 = Number.parseFloat(variant.alleleFrequencyGnomad2) !== 0 ? Number.parseFloat(variant.alleleFrequencyGnomad2).toExponential(2) : 0;
+        }
+        let afGnomad3 = "-";
+        if(variant.alleleFrequencyGnomad3 !== "NA"){
+          afGnomad3 = Number.parseFloat(variant.alleleFrequencyGnomad3) !== 0 ? Number.parseFloat(variant.alleleFrequencyGnomad3).toExponential(2) : 0;
+        }
+        alleleFrequencyHtml += `<td>${afCases}&nbsp</td><td>${afGnomad2}&nbsp</td><td>${afGnomad3}&nbsp</td>`;
+
+        const anGnomad2 = variant.alleleNumberGnomad2 !== "NA" ? variant.alleleNumberGnomad2 : "-";
+        const anGnomad3 = variant.alleleNumberGnomad3 !== "NA" ? variant.alleleNumberGnomad3 : "-";
+        alleleNumberHtml += `<td>${variant.alleleNumberCases}&nbsp</td><td>${anGnomad2}&nbsp</td><td>${anGnomad3}&nbsp</td>`;
 
         const borderCss = 'border: 1px solid #333333;';
         mouseOverHtml +=
           `<table style="margin-top:3px;${borderCss}">` +
             `<tr style="background-color:#ececec;margin-top:3px;${borderCss}">${variantHtml}</tr>` +
-            `<tr><td></td><td>Cases</td><td>Control</td></tr>` +
+            `<tr><td></td><td>Cases</td><td>Gnomad2&nbsp</td><td>Gnomad3&nbsp</td></tr>` +
             `<tr><td>Allele Frequency:</td>${alleleFrequencyHtml}</tr>` +
             `<tr><td>Allele Count:</td>${alleleCountHtml}</tr>` +
             `<tr><td>Allele Number:</td>${alleleNumberHtml}</tr>` +
@@ -643,7 +726,7 @@ varying vec4 vColor;
         
         //return mouseOverHtml;
         return sanitizeHtml(mouseOverHtml,{
-          allowedTags: ['table','tr','td','strong'],
+          allowedTags: ['table','tr','td','strong','br'],
           allowedAttributes: {
             'tr': ["style"],
             'td': ["colspan"],
@@ -691,21 +774,21 @@ varying vec4 vColor;
           this.tilesetInfo,
         );
 
-        const DEFAULT_MAX_TILE_WIDTH = this.options.maxTileWidth || 2e5;
+        // const DEFAULT_MAX_TILE_WIDTH = this.options.maxTileWidth || 2e5;
 
-        if (
-          tileWidth > DEFAULT_MAX_TILE_WIDTH
-        ) {
-          this.errorTextText = 'Zoom in to see details';
-          this.drawError();
-          this.animate();
-          return;
-        }
+        // if (
+        //   tileWidth > DEFAULT_MAX_TILE_WIDTH
+        // ) {
+        //   this.errorTextText = 'Zoom in to see details';
+        //   this.drawError();
+        //   this.animate();
+        //   return;
+        // }
 
-        this.errorTextText = null;
-        this.pBorder.clear();
-        this.drawError();
-        this.animate();
+        // this.errorTextText = null;
+        // this.pBorder.clear();
+        // this.drawError();
+        // this.animate();
       }
 
       this.setVisibleTiles(tiles);
@@ -770,6 +853,7 @@ varying vec4 vColor;
       }
 
       this.drawLollipops();
+      this.drawBarCharts();
 
       this.mouseOverGraphics.clear();
       this.animate();
@@ -845,40 +929,25 @@ CohortTrack.config = {
     'colorScale',
     'showMousePosition',
     'variantHeight',
-    'maxTileWidth'
+    'maxTileWidth',
+    'controlGroup',
     // 'minZoom'
   ],
   defaultOptions: {
-    colorScale: [
-      // Variant, Insertion, Deletion, Inversion, Duplication
-      [0.3, 0.3, 0.3, 0.6],
-      [0.6, 0.6, 0.0, 0.7],
-      [1, 0.0, 0.0, 0.55],
-      [0.68, 0.23, 0.87, 0.8],
-      [0.27, 0.64, 0.09, 0.8]
-    ],
+    colorScale: {
+      // Consequence level
+      HIGH: "#ff0000",
+      MODERATE: "#bf9c00",
+      LOW: "#51abf5",
+      MODIFIER: "#db4dff"
+    },
     showMousePosition: false,
     variantHeight: 12,
-    maxTileWidth: 2e5
+    maxTileWidth: 2e5,
+    controlGroup: 'gnomad2'
   },
   optionsInfo: {
-    
-    colorScale: {
-      name: 'Color scheme',
-      inlineOptions: {
-        default: {
-          value: [
-            // Variant, Insertion, Deletion, Inversion, Duplication
-            [0.3, 0.3, 0.3, 0.6],
-            [0.6, 0.6, 0.0, 0.7],
-            [1, 0.0, 0.0, 0.55],
-            [0.68, 0.23, 0.87, 0.8],
-            [0.27, 0.64, 0.09, 0.8]
-          ],
-          name: 'Default',
-        },
-      },
-    },
+
   },
 };
 

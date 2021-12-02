@@ -131,9 +131,20 @@ const extractColumnFromVcfInfo = (info, index) => {
 const vcfRecordToJson = (vcfRecord, chrName, multires_chromName, chrOffset) => {
   const segments = [];
   const info = vcfRecord['INFO'];
+  console.log(vcfRecord)
  
   // VCF records can have multiple ALT. We create a segment for each of them
   vcfRecord['ALT'].forEach((alt, index) => {
+
+    // If the control AF is NA, we are setting it to 0
+    const deltaAfGnomad2 = info.gnomADe2_AF[index] !== "NA"
+      ? info.AF_proband[index] - info.gnomADe2_AF[index]
+      : info.AF_proband[index];
+
+    const deltaAfGnomad3 = info.gnomADg_AF[index]  !== "NA"
+      ? info.AF_proband[index] - info.gnomADg_AF[index]
+      : info.AF_proband[index];
+
     const segment = {
       id: slugid.nice(),
       alt: alt,
@@ -143,14 +154,21 @@ const vcfRecordToJson = (vcfRecord, chrName, multires_chromName, chrOffset) => {
       chrName,
       multiresChrName: multires_chromName,
       chrOffset,
-      alleleCountCases: info.AC_MSA[index],
-      alleleCountControl: info.AC_CONTROL[index],
-      alleleFrequencyCases: info.AF_MSA[index],
-      alleleFrequencyControl: info.AF_CONTROL[index],
-      deltaAfAbs: Math.abs(info.AF_MSA[index] - info.AF_CONTROL[index]),
-      deltaAf: info.AF_MSA[index] - info.AF_CONTROL[index],
-      alleleNumberCases: info.AN_MSA[index],
-      alleleNumberControl: info.AN_CONTROL[index],
+      alleleCountCases: info.AC_proband[index],
+      alleleCountGnomad2: info.gnomADe2_AC[index],
+      alleleCountGnomad3: info.gnomADg_AC[index],
+      alleleFrequencyCases: info.AF_proband[index],
+      alleleFrequencyGnomad2: info.gnomADe2_AF[index],
+      alleleFrequencyGnomad3: info.gnomADg_AF[index],
+      deltaAfAbsGnomad2: Math.abs(deltaAfGnomad2),
+      deltaAfGnomad2: deltaAfGnomad2,
+      deltaAfAbsGnomad3: Math.abs(deltaAfGnomad3),
+      deltaAfGnomad3: deltaAfGnomad3,
+      alleleNumberCases: info.AN_proband[index],
+      alleleNumberGnomad2: info.gnomADe2_AN[index],
+      alleleNumberGnomad3: info.gnomADg_AN[index],
+      colorCategory: info.level_most_severe_consequence[index],
+      mostSevereConsequence: info.most_severe_consequence[index],
       //info: extractColumnFromVcfInfo(info, index),
       //row: null,
       type: 'variant',
@@ -248,9 +266,9 @@ const tile = async (uid, z, x) => {
     const tileWidth = +tsInfo.max_width / 2 ** +z;
     const recordPromises = [];
 
-    if (tileWidth > maxTileWidth) {
-      return new Promise((resolve) => resolve([]));
-    }
+    // if (tileWidth > maxTileWidth) {
+    //   return new Promise((resolve) => resolve([]));
+    // }
 
     // get the bounds of the tile
     let minX = tsInfo.min_pos[0] + x * tileWidth;
@@ -265,7 +283,8 @@ const tile = async (uid, z, x) => {
 
     for (let i = 0; i < cumPositions.length; i++) {
       const chromName = cumPositions[i].chr;
-      const multires_chromName = chromName + "_" + (tsInfo.max_zoom - z);
+      //const multires_chromName = chromName + "_" + (tsInfo.max_zoom - z);
+      const multires_chromName = chromName + "_0"
       const chromStart = cumPositions[i].pos;
       const chromEnd = cumPositions[i].pos + chromLengths[chromName];
       tileValues.set(`${uid}.${z}.${x}`, []);

@@ -46,7 +46,7 @@ class LegendUtils {
     this.numLabels = numLabels;
 
     const distBetweenLabels = height / legendTexts.length;
-    const paddingTop = 10;
+    const paddingTop = 5;
     const paddingRight = 10;
     legendGraphics.beginFill(this.HGC.utils.colorToHex('#999999'));
 
@@ -90,11 +90,11 @@ class LegendUtils {
     });
     btext.width = btext.width / 2;
     btext.height = btext.height / 2;
-    btext.position.y = 0;
+    btext.position.y = -10;
     btext.anchor.x = 0.5;
     btext.position.x = trackwidth / 2;
     const paddingX = 5;
-    const paddingY = 2;
+    const paddingY = 3;
     notificationGraphics.beginFill(this.HGC.utils.colorToHex('#ececec'));
     notificationGraphics.drawRect(btext.position.x - btext.width/2 - paddingX, btext.position.y - paddingY -1 , btext.width + 2*paddingX , btext.height + 2*paddingY);
     notificationGraphics.addChild(btext);
