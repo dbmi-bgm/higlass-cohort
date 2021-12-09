@@ -200,6 +200,7 @@ const CohortTrack = (HGC, ...args) => {
       this.subTracks.push({
         legendUtils: new LegendUtils(this.HGC, 50, mainTrackHeight),
         legendGraphics: new this.HGC.libraries.PIXI.Graphics(),
+        labelGraphics: new this.HGC.libraries.PIXI.Graphics(),
         infoGraphics: new this.HGC.libraries.PIXI.Graphics(),
         bgGraphics: new this.HGC.libraries.PIXI.Graphics(),
         afGraphics: new this.HGC.libraries.PIXI.Graphics(),
@@ -218,6 +219,7 @@ const CohortTrack = (HGC, ...args) => {
         this.subTracks.push({
           legendUtils: new LegendUtils(this.HGC, 50, 50),
           legendGraphics: new this.HGC.libraries.PIXI.Graphics(),
+          labelGraphics: new this.HGC.libraries.PIXI.Graphics(),
           infoGraphics: new this.HGC.libraries.PIXI.Graphics(),
           bgGraphics: new this.HGC.libraries.PIXI.Graphics(),
           afGraphics: new this.HGC.libraries.PIXI.Graphics(),
@@ -233,6 +235,7 @@ const CohortTrack = (HGC, ...args) => {
         this.subTracks.push({
           legendUtils: new LegendUtils(this.HGC, 50, 50),
           legendGraphics: new this.HGC.libraries.PIXI.Graphics(),
+          labelGraphics: new this.HGC.libraries.PIXI.Graphics(),
           infoGraphics: new this.HGC.libraries.PIXI.Graphics(),
           bgGraphics: new this.HGC.libraries.PIXI.Graphics(),
           afGraphics: new this.HGC.libraries.PIXI.Graphics(),
@@ -250,13 +253,16 @@ const CohortTrack = (HGC, ...args) => {
       
       this.subTracks.forEach(subTrack => {
         subTrack.legendGraphics.position.y = subTrack.yOffset;
+        subTrack.labelGraphics.position.y = subTrack.yOffset;
         subTrack.infoGraphics.position.y = subTrack.yOffset;
         subTrack.afGraphics.position.y = subTrack.yOffset;
         subTrack.bgGraphics.position.y = subTrack.yOffset;
         this.pForeground.addChild(subTrack.legendGraphics);
+        this.pForeground.addChild(subTrack.labelGraphics);
         this.pForeground.addChild(subTrack.infoGraphics);
         this.pMain.addChild(subTrack.bgGraphics);
         this.pMain.addChild(subTrack.afGraphics);
+        
       });
 
     }
@@ -311,6 +317,15 @@ const CohortTrack = (HGC, ...args) => {
       subtrack.legendUtils.clearNotification(subtrack.infoGraphics);
     }
 
+    createLabelGraphics(){
+
+      this.subTracks.forEach(subTrack => {
+        subTrack.legendUtils.drawLabel(subTrack.labelGraphics, this.dimensions[0], subTrack.id, this.colorScaleHex);
+      });
+
+      
+    }
+
     createLegendGraphics() {
 
       const mainTrack = this.subTracks[0];
@@ -350,7 +365,6 @@ const CohortTrack = (HGC, ...args) => {
 
     drawBarCharts(){
 
-      console.log(this.variantsInView);
       let maxAF = 0;
       let minAF = 1;
 
@@ -579,7 +593,6 @@ const CohortTrack = (HGC, ...args) => {
       }else{
         maxAF = Math.ceil(maxAF);
       }
-      console.log(maxAF);
 
       mainTrack.legendUtils.resetLegend(mainTrack.legendGraphics);
       mainTrack.legendUtils.createLegend(mainTrack.legendGraphics, maxAF, mainTrack.numLabels, 0, mainTrack.height, false, true);
@@ -587,7 +600,7 @@ const CohortTrack = (HGC, ...args) => {
       const cll = mainTrack.legendUtils.currentLegendLevels;
       const numLabels = mainTrack.legendUtils.numLabels;
       const rangePos = [cll[0], cll[numLabels]];
-      console.log(rangePos)
+
       mainTrack.linearYScalePos = scaleLinear().domain([0, maxAF]).range([rangePos[1], rangePos[0]]);
 
       this.variantsInView.forEach((variant) =>{
@@ -636,6 +649,8 @@ const CohortTrack = (HGC, ...args) => {
       this.loadingText.text = 'Rendering...';
 
       this.createLegendGraphics();
+      this.createLabelGraphics();
+      
      
       if (
         !eqSet(this.visibleTileIds, new Set(Object.keys(this.fetchedTiles)))
@@ -776,7 +791,6 @@ const CohortTrack = (HGC, ...args) => {
         let alleleCountHtml = ``;
         let alleleFrequencyHtml = ``;
         let alleleNumberHtml = ``;
-        console.log(variant)
 
         let vRef = variant.ref.match(/.{1,15}/g).join('<br>');
         let vAlt = variant.alt.match(/.{1,15}/g).join('<br>');
@@ -787,10 +801,14 @@ const CohortTrack = (HGC, ...args) => {
           }`;
           mostSevereConsequenceHtml += `Most severe consequence: <strong>${variant.mostSevereConsequence}</strong>`;
           consequenceLevelHtml += `Consequence level: <strong>${this.capitalizeFirstLetter(variant.colorCategory.toLowerCase())}</strong>`;
+          const fisherHtml = `Fisher test p-value (-log10): <strong>${this.options.controlGroup === "gnomad2" ? variant.fisherGnomad2logp : variant.fisherGnomad3logp}</strong>`
+          const fisherORHtml = `Fisher test odds ratio: <strong>${this.options.controlGroup === "gnomad2" ? variant.fisherGnomad2OR : variant.fisherGnomad3OR}</strong>`
           variantHtml += `<td colspan='4'>
               Variant: <strong>${vRef} &rarr; ${vAlt}</strong> (${positionHtml}) <br/>
               ${mostSevereConsequenceHtml} <br/>
-              ${consequenceLevelHtml}
+              ${consequenceLevelHtml} <br/>
+              ${fisherHtml} <br/>
+              ${fisherORHtml}
             </td>`;
           
         } 

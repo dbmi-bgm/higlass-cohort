@@ -131,7 +131,6 @@ const extractColumnFromVcfInfo = (info, index) => {
 const vcfRecordToJson = (vcfRecord, chrName, multires_chromName, chrOffset) => {
   const segments = [];
   const info = vcfRecord['INFO'];
-  console.log(vcfRecord)
  
   // VCF records can have multiple ALT. We create a segment for each of them
   vcfRecord['ALT'].forEach((alt, index) => {
@@ -287,8 +286,8 @@ const tile = async (uid, z, x) => {
 
     for (let i = 0; i < cumPositions.length; i++) {
       const chromName = cumPositions[i].chr;
-      //const multires_chromName = chromName + "_" + (tsInfo.max_zoom - z);
-      const multires_chromName = chromName + "_0"
+      const multires_chromName = chromName + "_" + (tsInfo.max_zoom - z);
+      //const multires_chromName = chromName + "_0"
       const chromStart = cumPositions[i].pos;
       const chromEnd = cumPositions[i].pos + chromLengths[chromName];
       tileValues.set(`${uid}.${z}.${x}`, []);

@@ -7,6 +7,7 @@ class LegendUtils {
     this.baseLineLevel = 0;
     this.legendWidth = legendWidth;
     this.legendHeight = legendHeight;
+    this.hasLabelBeenRendered = false;
   }
 
   resetLegend(legendGraphics){
@@ -40,6 +41,79 @@ class LegendUtils {
     this.baseLineLevel = baseLineLevel;
   }
 
+  drawLabel(labelGraphics, trackwidth, subTrackId, colorScaleHex){
+
+    if(this.hasLabelBeenRendered){
+      return
+    }
+
+    if(subTrackId.includes('main')){
+      const boxWidth = 140;
+      const boxHeight = 73;
+      const marginTop = 10;
+      labelGraphics.beginFill(this.HGC.utils.colorToHex('#ffffff'));
+      labelGraphics.drawRect(trackwidth - boxWidth, marginTop, boxWidth, boxHeight);
+      labelGraphics.beginFill(this.HGC.utils.colorToHex('#cfcfcf'));
+      labelGraphics.drawRect(trackwidth - boxWidth, marginTop, boxWidth, 1);
+      labelGraphics.drawRect(trackwidth - boxWidth, marginTop + boxHeight, boxWidth, 1);
+      labelGraphics.drawRect(trackwidth - boxWidth, marginTop, 1, boxHeight);
+      labelGraphics.drawRect(trackwidth-1, marginTop, 1, boxHeight);
+      
+      const btext = new this.HGC.libraries.PIXI.BitmapText("Consequence level:", {
+        fontName: 'LabelText',
+      });
+      btext.width = btext.width / 2;
+      btext.height = btext.height / 2;
+      btext.position.y = 2*marginTop;
+      btext.position.x = trackwidth - 130;
+      labelGraphics.addChild(btext);
+
+
+      const paddingLR = 5;
+      const paddingTB = 3;
+      let offsetTop = btext.position.y + btext.height + paddingTB;
+      let marginLeft = 115;
+      Object.keys(colorScaleHex).forEach((level, index) => {
+        const btext = new this.HGC.libraries.PIXI.BitmapText(this.capitalizeFirstLetter(level.toLowerCase()), {
+          fontName: 'LabelText',
+        });
+        btext.width = btext.width / 2;
+        btext.height = btext.height / 2;
+        if(index % 2 === 0){
+          btext.position.y = offsetTop;
+          btext.position.x = trackwidth - marginLeft;
+        } else {
+          btext.position.y = offsetTop;
+          btext.position.x = trackwidth - marginLeft + 50;
+          offsetTop = offsetTop + btext.height + paddingTB;
+        }
+        
+        labelGraphics.addChild(btext);
+        labelGraphics.beginFill(colorScaleHex[level], 0.6);
+        labelGraphics.drawCircle(btext.position.x - 2*paddingLR, btext.position.y + btext.height/2, 4);
+        
+      });
+
+    }else{
+      const paddingLR = 5;
+      const paddingTB = 0;
+      labelGraphics.beginFill(this.HGC.utils.colorToHex('#ebebeb'));
+      const level = subTrackId.split('_')[0];
+      const group = this.capitalizeFirstLetter(subTrackId.split('_')[1]); 
+      const btext = new this.HGC.libraries.PIXI.BitmapText(`${group} AF (${level.toLowerCase()})`, {
+        fontName: 'LabelText',
+      });
+      btext.width = btext.width / 2;
+      btext.height = btext.height / 2;
+      btext.position.y = this.currentLegendLevels[0] - 1*paddingTB;
+      btext.position.x = trackwidth - btext.width - paddingLR;
+      labelGraphics.drawRect(btext.position.x - paddingLR, btext.position.y - paddingTB, btext.width + 2* paddingLR, btext.height + 2*paddingTB);
+      labelGraphics.addChild(btext);
+      
+    }
+    this.hasLabelBeenRendered = true;
+  }
+
 
   createLegend(legendGraphics, maxValue, numLabels, yOffset, height, inverted=false, linear=false){
     const legendTexts = this.generateLabelTexts(maxValue, numLabels, inverted, linear);
@@ -69,6 +143,9 @@ class LegendUtils {
 
   }
 
+  capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  }
   
 
   generateLabelTexts(maxValue, numLabels, inverted, linear){
@@ -123,6 +200,22 @@ class LegendUtils {
     // Install BitmapFont, used by BitmapText later
     this.HGC.libraries.PIXI.BitmapFont.from(
       'LegendText',
+      {
+        fontFamily: 'Arial',
+        fontSize: fontSize,
+        fontWeight: 500,
+        strokeThickness: 0,
+        fill: labelColor,
+      },
+      { chars: this.HGC.libraries.PIXI.BitmapFont.ASCII },
+    );
+
+    labelColor = '#555555';
+    fontSize = 13*2;
+    
+    // Install BitmapFont, used by BitmapText later
+    this.HGC.libraries.PIXI.BitmapFont.from(
+      'LabelText',
       {
         fontFamily: 'Arial',
         fontSize: fontSize,
