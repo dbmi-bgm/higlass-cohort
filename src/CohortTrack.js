@@ -186,8 +186,8 @@ const CohortTrack = (HGC, ...args) => {
       this.pForeground.addChild(this.loadingText);
 
       this.colorScaleHex = {};
-      Object.keys(this.options.colorScale).forEach(level => {
-        this.colorScaleHex[level] = HGC.utils.colorToHex(this.options.colorScale[level]);
+      this.options.colorScale.forEach(cs => {
+        this.colorScaleHex[cs["level"]] = HGC.utils.colorToHex(cs["color"]);
       });
 
     }
@@ -213,7 +213,7 @@ const CohortTrack = (HGC, ...args) => {
 
       let curYOffset = mainTrackHeight + 25;
 
-      Object.keys(this.options.colorScale).forEach(level => {
+      this.options.colorScale.forEach(cs => {
         const height = 30;
         const padding = 5;
         this.subTracks.push({
@@ -227,7 +227,7 @@ const CohortTrack = (HGC, ...args) => {
           yOffset: curYOffset,
           baseLineLevel: 0,
           numLabels: 1,
-          id: level + "_case"
+          id: cs["level"] + "_case"
         });
 
         curYOffset += height + padding;
@@ -243,7 +243,7 @@ const CohortTrack = (HGC, ...args) => {
           yOffset: curYOffset,
           baseLineLevel: 0,
           numLabels: 1,
-          id: level + "_control"
+          id: cs["level"] + "_control"
         });
 
         curYOffset += height + padding;
@@ -319,8 +319,16 @@ const CohortTrack = (HGC, ...args) => {
 
     createLabelGraphics(){
 
+      const colorScaleHex = [];
+      this.options.colorScale.forEach(cs => {
+        colorScaleHex.push({
+          level: cs["level"],
+          colorHex: HGC.utils.colorToHex(cs["color"])
+        });
+      });
+
       this.subTracks.forEach(subTrack => {
-        subTrack.legendUtils.drawLabel(subTrack.labelGraphics, this.dimensions[0], subTrack.id, this.colorScaleHex);
+        subTrack.legendUtils.drawLabel(subTrack.labelGraphics, this.dimensions[0], subTrack.id, colorScaleHex);
       });
 
       
@@ -775,10 +783,6 @@ const CohortTrack = (HGC, ...args) => {
           (trackY >= variant.yRangeRect2[0] &&
             trackY <= variant.yRangeRect2[1])),
       );
-      // console.log(trackX);
-      // console.log(this.variantsInView);
-      // console.log(filteredList);
-
       
       let mouseOverHtml = ``;
   
@@ -791,6 +795,7 @@ const CohortTrack = (HGC, ...args) => {
         let alleleCountHtml = ``;
         let alleleFrequencyHtml = ``;
         let alleleNumberHtml = ``;
+        const al = 'style="text-align: left !important;"';
 
         let vRef = variant.ref.match(/.{1,15}/g).join('<br>');
         let vAlt = variant.alt.match(/.{1,15}/g).join('<br>');
@@ -803,7 +808,7 @@ const CohortTrack = (HGC, ...args) => {
           consequenceLevelHtml += `Consequence level: <strong>${this.capitalizeFirstLetter(variant.colorCategory.toLowerCase())}</strong>`;
           const fisherHtml = `Fisher test p-value (-log10): <strong>${this.options.controlGroup === "gnomad2" ? variant.fisherGnomad2logp : variant.fisherGnomad3logp}</strong>`
           const fisherORHtml = `Fisher test odds ratio: <strong>${this.options.controlGroup === "gnomad2" ? variant.fisherGnomad2OR : variant.fisherGnomad3OR}</strong>`
-          variantHtml += `<td colspan='4'>
+          variantHtml += `<td colspan='4' style="text-align: left !important;">
               Variant: <strong>${vRef} &rarr; ${vAlt}</strong> (${positionHtml}) <br/>
               ${mostSevereConsequenceHtml} <br/>
               ${consequenceLevelHtml} <br/>
@@ -815,7 +820,7 @@ const CohortTrack = (HGC, ...args) => {
 
         const acGnomad2 = variant.alleleCountGnomad2 !== "NA" ? variant.alleleCountGnomad2 : "-";
         const acGnomad3 = variant.alleleCountGnomad3 !== "NA" ? variant.alleleCountGnomad3 : "-";
-        alleleCountHtml += `<td>${variant.alleleCountCases}</td><td>${acGnomad2}</td><td>${acGnomad3}</td>`;
+        alleleCountHtml += `<td ${al}>${variant.alleleCountCases}</td><td ${al}>${acGnomad2}</td><td ${al}>${acGnomad3}</td>`;
         const afCases = Number.parseFloat(variant.alleleFrequencyCases) !== 0 ? Number.parseFloat(variant.alleleFrequencyCases).toExponential(2) : 0;
         let afGnomad2 = "-";
         if(variant.alleleFrequencyGnomad2 !== "NA"){
@@ -825,20 +830,20 @@ const CohortTrack = (HGC, ...args) => {
         if(variant.alleleFrequencyGnomad3 !== "NA"){
           afGnomad3 = Number.parseFloat(variant.alleleFrequencyGnomad3) !== 0 ? Number.parseFloat(variant.alleleFrequencyGnomad3).toExponential(2) : 0;
         }
-        alleleFrequencyHtml += `<td>${afCases}&nbsp</td><td>${afGnomad2}&nbsp</td><td>${afGnomad3}&nbsp</td>`;
+        alleleFrequencyHtml += `<td ${al}>${afCases}&nbsp</td><td ${al}>${afGnomad2}&nbsp</td><td ${al}>${afGnomad3}&nbsp</td>`;
 
         const anGnomad2 = variant.alleleNumberGnomad2 !== "NA" ? variant.alleleNumberGnomad2 : "-";
         const anGnomad3 = variant.alleleNumberGnomad3 !== "NA" ? variant.alleleNumberGnomad3 : "-";
-        alleleNumberHtml += `<td>${variant.alleleNumberCases}&nbsp</td><td>${anGnomad2}&nbsp</td><td>${anGnomad3}&nbsp</td>`;
+        alleleNumberHtml += `<td ${al}>${variant.alleleNumberCases}&nbsp</td><td ${al}>${anGnomad2}&nbsp</td><td ${al}>${anGnomad3}&nbsp</td>`;
 
         const borderCss = 'border: 1px solid #333333;';
         mouseOverHtml +=
           `<table style="margin-top:3px;${borderCss}">` +
             `<tr style="background-color:#ececec;margin-top:3px;${borderCss}">${variantHtml}</tr>` +
-            `<tr><td></td><td>Cases</td><td>Gnomad2&nbsp</td><td>Gnomad3&nbsp</td></tr>` +
-            `<tr><td>Allele Frequency:</td>${alleleFrequencyHtml}</tr>` +
-            `<tr><td>Allele Count:</td>${alleleCountHtml}</tr>` +
-            `<tr><td>Allele Number:</td>${alleleNumberHtml}</tr>` +
+            `<tr><td ${al}></td><td ${al}>Cases</td><td ${al}>gnomAD v2&nbsp</td><td ${al}>gnomAD v3&nbsp</td></tr>` +
+            `<tr><td ${al}>Allele Frequency:</td>${alleleFrequencyHtml}</tr>` +
+            `<tr><td ${al}>Allele Count:</td>${alleleCountHtml}</tr>` +
+            `<tr><td ${al}>Allele Number:</td>${alleleNumberHtml}</tr>` +
           `</table>`;
         
       }
@@ -850,13 +855,16 @@ const CohortTrack = (HGC, ...args) => {
           allowedTags: ['table','tr','td','strong','br'],
           allowedAttributes: {
             'tr': ["style"],
-            'td': ["colspan"],
+            'td': ["colspan", "style"],
             'table': ["style"],
           },
           allowedStyles: {
             'tr': {
               'background-color': [/^#(0x)?[0-9a-f]+$/i, /^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/],
               'border': [/^1px solid #333333$/],
+            },
+            'td': {
+              'text-align': [/^left$/, /^right$/, /^center$/],
             },
             'table': {
               'margin-top': [/^\d+(?:px|em|%)$/],
@@ -1056,13 +1064,24 @@ CohortTrack.config = {
     // 'minZoom'
   ],
   defaultOptions: {
-    colorScale: {
-      // Consequence level
-      HIGH: "#ff0000",
-      MODERATE: "#bf9c00",
-      LOW: "#51abf5",
-      MODIFIER: "#db4dff"
-    },
+    colorScale: [
+      {
+        level: "HIGH",
+        color: "#ff0000"
+      },
+      {
+        level: "MODERATE",
+        color: "#bf9c00"
+      },
+      {
+        level: "LOW",
+        color: "#51abf5"
+      },
+      {
+        level: "MODIFIER",
+        color: "#db4dff"
+      }
+    ],
     showMousePosition: false,
     variantHeight: 12,
     maxTileWidth: 2e5,
