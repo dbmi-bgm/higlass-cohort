@@ -7,7 +7,6 @@ class LegendUtils {
     this.baseLineLevel = 0;
     this.legendWidth = legendWidth;
     this.legendHeight = legendHeight;
-    this.hasLabelBeenRendered = false;
   }
 
   resetLegend(legendGraphics){
@@ -43,9 +42,8 @@ class LegendUtils {
 
   drawLabel(labelGraphics, trackwidth, subTrackId, colorScaleHex){
 
-    if(this.hasLabelBeenRendered){
-      return
-    }
+    labelGraphics.clear();
+    labelGraphics.removeChildren();
 
     if(subTrackId.includes('main')){
       const boxWidth = 140;
@@ -73,7 +71,9 @@ class LegendUtils {
       const paddingTB = 3;
       let offsetTop = btext.position.y + btext.height + paddingTB;
       let marginLeft = 115;
-      Object.keys(colorScaleHex).forEach((level, index) => {
+      colorScaleHex.forEach((cs, index) => {
+        const level = cs["level"];
+        const colorHex = cs["colorHex"];
         const btext = new this.HGC.libraries.PIXI.BitmapText(this.capitalizeFirstLetter(level.toLowerCase()), {
           fontName: 'LabelText',
         });
@@ -89,7 +89,7 @@ class LegendUtils {
         }
         
         labelGraphics.addChild(btext);
-        labelGraphics.beginFill(colorScaleHex[level], 0.6);
+        labelGraphics.beginFill(colorHex, 0.6);
         labelGraphics.drawCircle(btext.position.x - 2*paddingLR, btext.position.y + btext.height/2, 4);
         
       });
@@ -111,7 +111,6 @@ class LegendUtils {
       labelGraphics.addChild(btext);
       
     }
-    this.hasLabelBeenRendered = true;
   }
 
 
