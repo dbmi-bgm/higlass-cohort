@@ -31,7 +31,6 @@ class VCFDataFetcher {
   }
 
   tilesetInfo(callback) {
-    console.log('tilesetInfo');
     this.worker.then((tileFunctions) => {
       tileFunctions.tilesetInfo(this.uid).then(callback);
     });
