@@ -56,7 +56,7 @@ const CohortTrack = (HGC, ...args) => {
         fill: 'grey',
       });
 
-      this.initSubTracks();
+      
 
       this.loadingText.x = 40;
       this.loadingText.y = 0;
@@ -71,7 +71,8 @@ const CohortTrack = (HGC, ...args) => {
 
       this.isShowGlobalMousePosition = context.isShowGlobalMousePosition;
 
-      this.pForeground.addChild(this.loadingText);
+      //this.pForeground.addChild(this.loadingText);
+      this.initSubTracks();
 
       this.colorScaleHex = {};
       this.options.colorScale.forEach((cs) => {
@@ -83,10 +84,17 @@ const CohortTrack = (HGC, ...args) => {
           this.options.variantDetailSource,
         );
       }
+
+      this.prevOptions = Object.assign({}, options);
     }
 
     initSubTracks() {
       this.subTracks = [];
+      this.pForeground.removeChildren();
+      this.pForeground.clear();
+      this.pForeground.addChild(this.loadingText);
+      this.pMain.removeChildren();
+      this.pMain.clear();
 
       const mainTrackHeight =
         this.options.mainDisplay === 'deltaAF' ? 200 : 100;
@@ -179,9 +187,14 @@ const CohortTrack = (HGC, ...args) => {
     }
 
     rerender(options) {
+
       super.rerender(options);
       this.options = options;
+      if(this.options.showAlleleFrequencies !== this.prevOptions.showAlleleFrequencies){
+        this.initSubTracks();
+      }
       this.updateExistingGraphics();
+      this.prevOptions = Object.assign({}, options);
     }
 
     drawNotification(subtrack, text) {
@@ -720,6 +733,8 @@ const CohortTrack = (HGC, ...args) => {
 
     // HIGLASS CORE NEEDS TO SUPPORT THIS
     onMouseClick() {
+      // disable for now
+      return;
       if (!this.mouseClickData) return;
 
       const chr = this.mouseClickData.chrName;
@@ -748,18 +763,30 @@ const CohortTrack = (HGC, ...args) => {
 
       const padding = 2;
 
-      const filteredList = this.variantsInView.filter(
-        (variant) =>
-          variant.xPosLollipop - this.lollipopRadius - padding <= trackX &&
-          trackX <= variant.xPosLollipop + this.lollipopRadius + padding &&
-          ((trackY >= variant.yPosLollipop - padding &&
-            trackY <=
-              variant.yPosLollipop + 2 * this.lollipopRadius + padding) ||
-            (trackY >= variant.yRangeRect1[0] &&
-              trackY <= variant.yRangeRect1[1]) ||
-            (trackY >= variant.yRangeRect2[0] &&
-              trackY <= variant.yRangeRect2[1])),
-      );
+      let filteredList = [];
+      if(this.options.showAlleleFrequencies){
+        filteredList = this.variantsInView.filter(
+          (variant) =>
+            variant.xPosLollipop - this.lollipopRadius - padding <= trackX &&
+            trackX <= variant.xPosLollipop + this.lollipopRadius + padding &&
+            ((trackY >= variant.yPosLollipop - padding &&
+              trackY <=
+                variant.yPosLollipop + 2 * this.lollipopRadius + padding) ||
+              (trackY >= variant.yRangeRect1[0] &&
+                trackY <= variant.yRangeRect1[1]) ||
+              (trackY >= variant.yRangeRect2[0] &&
+                trackY <= variant.yRangeRect2[1])),
+        );
+      }else{
+        filteredList = this.variantsInView.filter(
+          (variant) =>
+            variant.xPosLollipop - this.lollipopRadius - padding <= trackX &&
+            trackX <= variant.xPosLollipop + this.lollipopRadius + padding &&
+            ((trackY >= variant.yPosLollipop - padding &&
+              trackY <=
+                variant.yPosLollipop + 2 * this.lollipopRadius + padding)),
+        );
+      }
 
       let mouseOverHtml = ``;
 
@@ -997,6 +1024,7 @@ CohortTrack.config = {
     'controlGroup',
     'mainDisplay',
     'variantDetailSource',
+    'consequenceLevels',
     // 'minZoom'
   ],
   defaultOptions: {
@@ -1024,8 +1052,41 @@ CohortTrack.config = {
     maxTileWidth: 2e5,
     controlGroup: 'gnomad2',
     mainDisplay: 'fisher', // 'fisher', 'deltaAF'
+    consequenceLevels: [
+      "HIGH",
+      "MODERATE",
+      "LOW",
+      "MODIFIER"
+    ]
   },
-  optionsInfo: {},
+  optionsInfo: {
+    mainDisplay: {
+      name: 'Main display',
+      inlineOptions: {
+        fisher: {
+          value: 'fisher',
+          name: 'Fisher exact test',
+        },
+        deltaaf: {
+          value: 'deltaAF',
+          name: 'Delta Allele frequency',
+        },
+      },
+    },
+    showAlleleFrequencies: {
+      name: 'Show allele frequencies',
+      inlineOptions: {
+        yes: {
+          value: true,
+          name: 'Yes',
+        },
+        no: {
+          value: false,
+          name: 'No',
+        },
+      },
+    },
+  },
 };
 
 export default CohortTrack;
