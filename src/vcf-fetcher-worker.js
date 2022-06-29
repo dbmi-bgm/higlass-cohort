@@ -170,7 +170,7 @@ const vcfRecordToJson = (vcfRecord, chrName, multires_chromName, chrOffset) => {
       fisherGnomad3OR: info.fisher_gnomADv3_OR[index],
       fisherGnomad2logp: info.fisher_gnomADv2_minuslog10p[index],
       fisherGnomad3logp: info.fisher_gnomADv3_minuslog10p[index],
-      colorCategory: info.level_most_severe_consequence[index],
+      consequenceLevel: info.level_most_severe_consequence[index],
       mostSevereConsequence: info.most_severe_consequence[index],
       //info: extractColumnFromVcfInfo(info, index),
       //row: null,

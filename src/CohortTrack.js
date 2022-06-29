@@ -17,9 +17,8 @@ import {
   eqSet,
   all,
   isIn,
-  sanitizeMouseOverHtml
+  sanitizeMouseOverHtml,
 } from './misc-utils';
-
 
 const CohortTrack = (HGC, ...args) => {
   class CohortTrackClass extends HGC.tracks.Tiled1DPixiTrack {
@@ -56,8 +55,6 @@ const CohortTrack = (HGC, ...args) => {
         fill: 'grey',
       });
 
-      
-
       this.loadingText.x = 40;
       this.loadingText.y = 0;
 
@@ -71,7 +68,6 @@ const CohortTrack = (HGC, ...args) => {
 
       this.isShowGlobalMousePosition = context.isShowGlobalMousePosition;
 
-      //this.pForeground.addChild(this.loadingText);
       this.initSubTracks();
 
       this.colorScaleHex = {};
@@ -114,8 +110,8 @@ const CohortTrack = (HGC, ...args) => {
 
       let curYOffset = mainTrackHeight + 25;
 
-      if(this.options.showAlleleFrequencies){
-        this.options.colorScale.forEach((cs) => {
+      if (this.options.showAlleleFrequencies) {
+        this.options.consequenceLevels.forEach((cl) => {
           const height = 30;
           const padding = 5;
           this.subTracks.push({
@@ -129,11 +125,11 @@ const CohortTrack = (HGC, ...args) => {
             yOffset: curYOffset,
             baseLineLevel: 0,
             numLabels: 1,
-            id: cs['level'] + '_case',
+            id: cl + '_case',
           });
-  
+
           curYOffset += height + padding;
-  
+
           this.subTracks.push({
             legendUtils: new LegendUtils(this.HGC, 50, 50),
             legendGraphics: new this.HGC.libraries.PIXI.Graphics(),
@@ -145,9 +141,9 @@ const CohortTrack = (HGC, ...args) => {
             yOffset: curYOffset,
             baseLineLevel: 0,
             numLabels: 1,
-            id: cs['level'] + '_control',
+            id: cl + '_control',
           });
-  
+
           curYOffset += height + padding;
         });
       }
@@ -165,11 +161,11 @@ const CohortTrack = (HGC, ...args) => {
         this.pMain.addChild(subTrack.afGraphics);
       });
 
-      this.pubSub.publish("trackDimensionsModified", {
+      this.pubSub.publish('trackDimensionsModified', {
         height: curYOffset + 20,
         resizeParentDiv: true,
         trackId: this.trackId,
-        viewId: this.viewId
+        viewId: this.viewId,
       });
     }
 
@@ -187,10 +183,15 @@ const CohortTrack = (HGC, ...args) => {
     }
 
     rerender(options) {
-
       super.rerender(options);
       this.options = options;
-      if(this.options.showAlleleFrequencies !== this.prevOptions.showAlleleFrequencies){
+      const csSetOld = new Set(this.prevOptions.consequenceLevels);
+      const csSetNew = new Set(this.options.consequenceLevels);
+      if (
+        this.options.showAlleleFrequencies !==
+          this.prevOptions.showAlleleFrequencies ||
+        !eqSet(csSetOld, csSetNew)
+      ) {
         this.initSubTracks();
       }
       this.updateExistingGraphics();
@@ -285,7 +286,11 @@ const CohortTrack = (HGC, ...args) => {
       this.variantsInView = [];
       this.variantList.forEach((variant) => {
         const xPos = this._xScale(variant.from);
-        if (xPos > 0 && xPos < this.dimensions[0]) {
+        if (
+          xPos > 0 &&
+          xPos < this.dimensions[0] &&
+          this.options.consequenceLevels.includes(variant.consequenceLevel)
+        ) {
           this.variantsInView.push(variant);
         }
       });
@@ -360,7 +365,7 @@ const CohortTrack = (HGC, ...args) => {
           .range([0, rangePos[1] - rangePos[0]]);
 
         this.variantsInView.forEach((variant) => {
-          if (!subTrack.id.includes(variant.colorCategory)) {
+          if (!subTrack.id.includes(variant.consequenceLevel)) {
             return;
           }
 
@@ -390,7 +395,7 @@ const CohortTrack = (HGC, ...args) => {
             const rectHeight = subTrack.logYScalePos(valueToPlot);
             const yPos = rangePos[1] - rectHeight + 1;
             subTrack.afGraphics.beginFill(
-              this.colorScaleHex[variant.colorCategory],
+              this.colorScaleHex[variant.consequenceLevel],
             );
             subTrack.afGraphics.drawRect(xPos, yPos, rectWidth, rectHeight);
           } else if (valueToPlot >= 0) {
@@ -402,7 +407,7 @@ const CohortTrack = (HGC, ...args) => {
             const rectHeight = subTrack.logYScalePos(valueToPlot);
             const yPos = rangePos[1] - rectHeight + 1;
             subTrack.afGraphics.beginFill(
-              this.colorScaleHex[variant.colorCategory],
+              this.colorScaleHex[variant.consequenceLevel],
             );
             subTrack.afGraphics.drawRect(xPos, yPos, rectWidth, 1);
           }
@@ -502,7 +507,7 @@ const CohortTrack = (HGC, ...args) => {
             ? variant.deltaAfGnomad2
             : variant.deltaAfGnomad3;
         mainTrack.afGraphics.beginFill(
-          this.colorScaleHex[variant.colorCategory],
+          this.colorScaleHex[variant.consequenceLevel],
         );
         if (deltaAF >= 0) {
           yPos = rangePosSmallScale[1];
@@ -519,7 +524,7 @@ const CohortTrack = (HGC, ...args) => {
 
           this.drawLollipop(
             mainTrack.afGraphics,
-            this.colorScaleHex[variant.colorCategory],
+            this.colorScaleHex[variant.consequenceLevel],
             xPos,
             mainTrack.baseLineLevel,
             mainTrack.baseLineLevel - yPos,
@@ -542,7 +547,7 @@ const CohortTrack = (HGC, ...args) => {
           // We are adding 1 to the baseline to account for the thickness of the zero line
           this.drawLollipop(
             mainTrack.afGraphics,
-            this.colorScaleHex[variant.colorCategory],
+            this.colorScaleHex[variant.consequenceLevel],
             xPos,
             mainTrack.baseLineLevel + 1,
             mainTrack.baseLineLevel - yPos,
@@ -607,7 +612,7 @@ const CohortTrack = (HGC, ...args) => {
         }
 
         mainTrack.afGraphics.beginFill(
-          this.colorScaleHex[variant.colorCategory],
+          this.colorScaleHex[variant.consequenceLevel],
         );
         if (fisher >= 0) {
           yPos = mainTrack.linearYScalePos(fisher);
@@ -618,7 +623,7 @@ const CohortTrack = (HGC, ...args) => {
 
         this.drawLollipop(
           mainTrack.afGraphics,
-          this.colorScaleHex[variant.colorCategory],
+          this.colorScaleHex[variant.consequenceLevel],
           xPos,
           mainTrack.baseLineLevel,
           mainTrack.baseLineLevel - yPos,
@@ -764,7 +769,7 @@ const CohortTrack = (HGC, ...args) => {
       const padding = 2;
 
       let filteredList = [];
-      if(this.options.showAlleleFrequencies){
+      if (this.options.showAlleleFrequencies) {
         filteredList = this.variantsInView.filter(
           (variant) =>
             variant.xPosLollipop - this.lollipopRadius - padding <= trackX &&
@@ -777,14 +782,13 @@ const CohortTrack = (HGC, ...args) => {
               (trackY >= variant.yRangeRect2[0] &&
                 trackY <= variant.yRangeRect2[1])),
         );
-      }else{
+      } else {
         filteredList = this.variantsInView.filter(
           (variant) =>
             variant.xPosLollipop - this.lollipopRadius - padding <= trackX &&
             trackX <= variant.xPosLollipop + this.lollipopRadius + padding &&
-            ((trackY >= variant.yPosLollipop - padding &&
-              trackY <=
-                variant.yPosLollipop + 2 * this.lollipopRadius + padding)),
+            trackY >= variant.yPosLollipop - padding &&
+            trackY <= variant.yPosLollipop + 2 * this.lollipopRadius + padding,
         );
       }
 
@@ -809,7 +813,7 @@ const CohortTrack = (HGC, ...args) => {
           )}`;
           mostSevereConsequenceHtml += `Most severe consequence: <strong>${variant.mostSevereConsequence}</strong>`;
           consequenceLevelHtml += `Consequence level: <strong>${capitalizeFirstLetter(
-            variant.colorCategory.toLowerCase(),
+            variant.consequenceLevel.toLowerCase(),
           )}</strong>`;
           const fisherHtml = `Fisher test p-value (-log10): <strong>${
             this.options.controlGroup === 'gnomad2'
@@ -1052,12 +1056,7 @@ CohortTrack.config = {
     maxTileWidth: 2e5,
     controlGroup: 'gnomad2',
     mainDisplay: 'fisher', // 'fisher', 'deltaAF'
-    consequenceLevels: [
-      "HIGH",
-      "MODERATE",
-      "LOW",
-      "MODIFIER"
-    ]
+    consequenceLevels: ['HIGH', 'MODERATE', 'LOW', 'MODIFIER'],
   },
   optionsInfo: {
     mainDisplay: {
