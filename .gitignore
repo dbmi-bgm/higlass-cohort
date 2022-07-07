@@ -3,7 +3,12 @@ test_html
 *.swp
 *.swo
 node_modules
-scripts
+scripts/*.vcf
+scripts/*.gz
+scripts/*.tbi
+scripts/*.txt
+scripts/*.bed
+scripts/*.bw
 dist
 es
 *.zip

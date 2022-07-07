@@ -33,12 +33,22 @@ class WaitPlugin extends WebpackBeforeBuildPlugin {
   }
 }
 
-const workerConfig = {
+const workerConfigCohort = {
   output: {
-    filename: 'worker.js',
+    filename: 'cohort-worker.js',
     path: path.resolve(__dirname, 'dist'),
   },
-  entry: path.resolve(__dirname, 'src/vcf-fetcher-worker'),
+  entry: path.resolve(__dirname, 'src/vcf-worker-cohort'),
+  target: 'webworker',
+  plugins: [new UnminifiedWebpackPlugin(), new ThreadsPlugin()],
+};
+
+const workerConfigGeneList = {
+  output: {
+    filename: 'genelist-worker.js',
+    path: path.resolve(__dirname, 'dist'),
+  },
+  entry: path.resolve(__dirname, 'src/vcf-worker-genelist'),
   target: 'webworker',
   plugins: [new UnminifiedWebpackPlugin(), new ThreadsPlugin()],
 };
@@ -165,4 +175,4 @@ const libraryConfig = {
   ],
 };
 
-module.exports = [workerConfig, libraryConfig];
+module.exports = [workerConfigGeneList, workerConfigCohort, libraryConfig];
