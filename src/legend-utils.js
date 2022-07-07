@@ -15,7 +15,13 @@ class LegendUtils {
     legendGraphics.beginFill(this.HGC.utils.colorToHex('#ffffff'));
     legendGraphics.drawRect(0, 0, this.legendWidth, this.legendHeight+5);
     this.currentLegendLevels = [];
+  }
 
+  setLegendWidth(legendWidth){
+    this.legendWidth = legendWidth;
+  }
+  setLegendHeight(legendHeight){
+    this.legendHeight = legendHeight;
   }
 
   drawHorizontalLines(tileGraphics, from, to){
@@ -40,14 +46,14 @@ class LegendUtils {
     this.baseLineLevel = baseLineLevel;
   }
 
-  drawLabel(labelGraphics, trackwidth, subTrackId, colorScaleHex){
+  drawLabel(labelGraphics, trackwidth, subTrackId, colorScaleHex, consequenceLevels){
 
     labelGraphics.clear();
     labelGraphics.removeChildren();
 
     if(subTrackId.includes('main')){
       const boxWidth = 140;
-      const boxHeight = 73;
+      const boxHeight = consequenceLevels.length > 2 ? 73 : 53;
       const marginTop = 10;
       labelGraphics.beginFill(this.HGC.utils.colorToHex('#ffffff'));
       labelGraphics.drawRect(trackwidth - boxWidth, marginTop, boxWidth, boxHeight);
@@ -71,9 +77,10 @@ class LegendUtils {
       const paddingTB = 3;
       let offsetTop = btext.position.y + btext.height + paddingTB;
       let marginLeft = 115;
-      colorScaleHex.forEach((cs, index) => {
-        const level = cs["level"];
-        const colorHex = cs["colorHex"];
+      consequenceLevels.forEach((level, index) => {
+        //const level = cs["level"];
+        const cs = colorScaleHex.filter(cs => cs["level"] === level)
+        const colorHex = cs[0]["colorHex"];
         const btext = new this.HGC.libraries.PIXI.BitmapText(this.capitalizeFirstLetter(level.toLowerCase()), {
           fontName: 'LabelText',
         });
@@ -140,6 +147,24 @@ class LegendUtils {
       legendGraphics.addChild(btext);
     });
 
+  }
+
+  drawAxisLabel(legendGraphics, labelText){
+    legendGraphics.beginFill(this.HGC.utils.colorToHex('#999999'));
+    const btext = new this.HGC.libraries.PIXI.BitmapText(labelText, {
+      fontName: 'LegendText',
+    });
+    btext.width = btext.width / 2;
+    btext.height = btext.height / 2;
+    btext.position.y = 10;
+    const yLevelMin = Math.min(...this.currentLegendLevels);
+    const yLevelMax = Math.max(...this.currentLegendLevels);
+    btext.position.y = (yLevelMin+yLevelMax)/2;
+    btext.position.x = 2;
+    btext.angle = -90;
+    btext.anchor.y = 0.0;
+    btext.anchor.x = 0.5;
+    legendGraphics.addChild(btext);
   }
 
   capitalizeFirstLetter(string) {

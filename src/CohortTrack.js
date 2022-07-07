@@ -1,7 +1,7 @@
 import VCFDataFetcher from './vcf-fetcher';
-import MyWorkerWeb from 'raw-loader!../dist/worker.js';
+import MyWorkerWeb from 'raw-loader!../dist/cohort-worker.js';
 import { spawn, BlobWorker } from 'threads';
-import { PILEUP_COLORS } from './vcf-utils';
+import { COLORS } from './vcf-utils';
 import LegendUtils from './legend-utils';
 import VariantDetails from './VariantDetails';
 import VariantDetailFetcher from './variant-detail-fetcher';
@@ -19,14 +19,15 @@ import {
   isIn,
   sanitizeMouseOverHtml,
 } from './misc-utils';
+import BaseTrack from './BaseTrack'
 
 const CohortTrack = (HGC, ...args) => {
-  class CohortTrackClass extends HGC.tracks.Tiled1DPixiTrack {
+
+  class CohortTrackClass extends BaseTrack(HGC, ...args) {
     constructor(context, options) {
       const worker = spawn(BlobWorker.fromText(MyWorkerWeb));
       // this is where the threaded tile fetcher is called
-      context.dataConfig['maxTileWidth'] = options.maxTileWidth;
-      context.dataFetcher = new VCFDataFetcher(context.dataConfig, worker, HGC);
+      context.dataFetcher = new VCFDataFetcher(context.dataConfig, worker, HGC, options);
       super(context, options);
       context.dataFetcher.track = this;
 
@@ -169,19 +170,6 @@ const CohortTrack = (HGC, ...args) => {
       });
     }
 
-    initTile(tile) {}
-
-    getBoundsOfTile(tile) {
-      // get the bounds of the tile
-      const tileId = +tile.tileId.split('.')[1];
-      const zoomLevel = +tile.tileId.split('.')[0]; //track.zoomLevel does not always seem to be up to date
-      const tileWidth = +this.tilesetInfo.max_width / 2 ** zoomLevel;
-      const tileMinX = this.tilesetInfo.min_pos[0] + tileId * tileWidth; // abs coordinates
-      const tileMaxX = this.tilesetInfo.min_pos[0] + (tileId + 1) * tileWidth;
-      this.zoomLevel = zoomLevel;
-      return [tileMinX, tileMaxX];
-    }
-
     rerender(options) {
       super.rerender(options);
       this.options = options;
@@ -225,6 +213,7 @@ const CohortTrack = (HGC, ...args) => {
           this.dimensions[0],
           subTrack.id,
           colorScaleHex,
+          this.options.consequenceLevels
         );
       });
     }
@@ -661,12 +650,11 @@ const CohortTrack = (HGC, ...args) => {
 
       this.worker.then((tileFunctions) => {
         tileFunctions
-          .renderSegments(
+          .retrieveSegments(
             this.dataFetcher.uid,
             Object.values(this.fetchedTiles).map((x) => x.remoteId),
             this._xScale.domain(),
-            this._xScale.range(),
-            this.options,
+            this._xScale.range()
           )
           .then((toRender) => {
             this.loadingText.visible = false;
@@ -709,32 +697,7 @@ const CohortTrack = (HGC, ...args) => {
       });
     }
 
-    updateLoadingText() {
-      this.loadingText.visible = true;
-      this.loadingText.text = '';
-
-      if (!this.tilesetInfo) {
-        this.loadingText.text = 'Fetching tileset info...';
-        return;
-      }
-
-      if (this.fetching.size) {
-        this.loadingText.text = 'Fetching data...';
-      }
-
-      if (this.rendering.size) {
-        this.loadingText.text = 'Rendering data...';
-      }
-
-      if (!this.fetching.size && !this.rendering.size) {
-        this.loadingText.visible = false;
-      }
-    }
-
-    draw() {
-      this.trackNotFoundText.text = 'Track not found.';
-      this.trackNotFoundText.visible = true;
-    }
+    
 
     // HIGLASS CORE NEEDS TO SUPPORT THIS
     onMouseClick() {
@@ -899,51 +862,8 @@ const CohortTrack = (HGC, ...args) => {
       return '';
     }
 
-    calculateZoomLevel() {
-      if (!this.tilesetInfo) return 0;
-
-      return HGC.utils.trackUtils.calculate1DZoomLevel(
-        this.tilesetInfo,
-        this._xScale,
-        this.maxZoom,
-      );
-    }
-
-    calculateVisibleTiles() {
-      const tiles = HGC.utils.trackUtils.calculate1DVisibleTiles(
-        this.tilesetInfo,
-        this._xScale,
-      );
-
-      for (const tile of tiles) {
-        const { tileX, tileWidth } = getTilePosAndDimensions(
-          tile[0],
-          [tile[1]],
-          this.tilesetInfo.tile_size,
-          this.tilesetInfo,
-        );
-      }
-
-      this.setVisibleTiles(tiles);
-    }
-
-    setPosition(newPosition) {
-      super.setPosition(newPosition);
-
-      [this.pMain.position.x, this.pMain.position.y] = this.position;
-      [this.pMouseOver.position.x, this.pMouseOver.position.y] = this.position;
-    }
-
     zoomed(newXScale, newYScale) {
       super.zoomed(newXScale, newYScale);
-
-      if (this.segmentGraphics) {
-        scaleScalableGraphics(
-          this.segmentGraphics,
-          newXScale,
-          this.drawnAtScale,
-        );
-      }
 
       this.drawLollipops();
       this.drawBarCharts();
@@ -952,59 +872,6 @@ const CohortTrack = (HGC, ...args) => {
       this.animate();
     }
 
-    exportSVG() {
-      let track = null;
-      let base = null;
-
-      if (super.exportSVG) {
-        [base, track] = super.exportSVG();
-      } else {
-        base = document.createElement('g');
-        track = base;
-      }
-
-      const output = document.createElement('g');
-      track.appendChild(output);
-
-      output.setAttribute(
-        'transform',
-        `translate(${this.pMain.position.x},${this.pMain.position.y}) scale(${this.pMain.scale.x},${this.pMain.scale.y})`,
-      );
-
-      const gSegment = document.createElement('g');
-
-      gSegment.setAttribute(
-        'transform',
-        `translate(${this.segmentGraphics.position.x},${this.segmentGraphics.position.y})` +
-          `scale(${this.segmentGraphics.scale.x},${this.segmentGraphics.scale.y})`,
-      );
-
-      output.appendChild(gSegment);
-
-      if (this.segmentGraphics) {
-        const b64string = HGC.services.pixiRenderer.plugins.extract.base64(
-          // this.segmentGraphics, 'image/png', 1,
-          this.pMain.parent.parent,
-        );
-
-        const gImage = document.createElement('g');
-
-        gImage.setAttribute('transform', `translate(0,0)`);
-
-        const image = document.createElement('image');
-        image.setAttributeNS(
-          'http://www.w3.org/1999/xlink',
-          'xlink:href',
-          b64string,
-        );
-        gImage.appendChild(image);
-        gSegment.appendChild(gImage);
-
-        // gSegment.appendChild(image);
-      }
-
-      return [base, base];
-    }
   }
 
   return new CohortTrackClass(...args);
@@ -1024,7 +891,6 @@ CohortTrack.config = {
     'showAlleleFrequencies',
     'showMousePosition',
     'variantHeight',
-    'maxTileWidth',
     'controlGroup',
     'mainDisplay',
     'variantDetailSource',
@@ -1053,22 +919,25 @@ CohortTrack.config = {
     showAlleleFrequencies: false,
     showMousePosition: false,
     variantHeight: 12,
-    maxTileWidth: 2e5,
     controlGroup: 'gnomad2',
     mainDisplay: 'fisher', // 'fisher', 'deltaAF'
     consequenceLevels: ['HIGH', 'MODERATE', 'LOW', 'MODIFIER'],
   },
   optionsInfo: {
-    mainDisplay: {
-      name: 'Main display',
+    consequenceLevels: {
+      name: 'Visible consequence levels',
       inlineOptions: {
-        fisher: {
-          value: 'fisher',
-          name: 'Fisher exact test',
+        hm: {
+          value: ['HIGH', 'MODERATE'],
+          name: 'High, Moderate',
         },
-        deltaaf: {
-          value: 'deltaAF',
-          name: 'Delta Allele frequency',
+        hml: {
+          value: ['HIGH', 'MODERATE', 'LOW'],
+          name: 'High, Moderate, Low',
+        },
+        hmlm: {
+          value: ['HIGH', 'MODERATE', 'LOW', 'MODIFIER'],
+          name: 'High, Moderate, Low, Modifier',
         },
       },
     },

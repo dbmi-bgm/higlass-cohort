@@ -86,8 +86,6 @@ class MultiResVcf:
                 if num_variants_in_bin == 0:
                     continue
 
-                #print(variants_in_bin)
-
                 for consequence in CONSEQUENCE_LEVELS:
                     variants_per_consequence = variants_in_bin[
                         (variants_in_bin.consequence == consequence)
@@ -333,6 +331,6 @@ def create_higlass_files(
 if __name__ == "__main__":
     """
     Example:
-    python create_higlass_files.py -i joint_calling_results.vcf -o joint_calling_results_higlass.vcf -b joint_calling_results_coverage.vcf
+    python create_higlass_files.py -i joint_calling_results.vcf -o joint_calling_results_higlass.vcf -b joint_calling_results_coverage.vcf -q False
     """
     create_higlass_files()

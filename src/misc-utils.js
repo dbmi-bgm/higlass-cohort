@@ -17,6 +17,10 @@ export const sanitizeMouseOverHtml = (html) => {
         border: [/^1px solid #333333$/],
       },
       td: {
+        'color': [
+          /^#(0x)?[0-9a-f]+$/i,
+          /^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/,
+        ],
         'text-align': [/^left$/, /^right$/, /^center$/],
       },
       table: {
@@ -130,6 +134,23 @@ export const isIn = (as) => {
     return as.has(a);
   };
 }
+
+export const createColorTexture = (PIXI, colors) => {
+  const colorTexRes = Math.max(2, Math.ceil(Math.sqrt(colors.length)));
+  const rgba = new Float32Array(colorTexRes ** 2 * 4);
+  colors.forEach((color, i) => {
+    // eslint-disable-next-line prefer-destructuring
+    rgba[i * 4] = color[0]; // r
+    // eslint-disable-next-line prefer-destructuring
+    rgba[i * 4 + 1] = color[1]; // g
+    // eslint-disable-next-line prefer-destructuring
+    rgba[i * 4 + 2] = color[2]; // b
+    // eslint-disable-next-line prefer-destructuring
+    rgba[i * 4 + 3] = color[3]; // a
+  });
+
+  return [PIXI.Texture.fromBuffer(rgba, colorTexRes, colorTexRes), colorTexRes];
+};
 
 
 

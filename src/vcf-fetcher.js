@@ -1,7 +1,7 @@
 const DEBOUNCE_TIME = 200;
 
 class VCFDataFetcher {
-  constructor(dataConfig, worker, HGC) {
+  constructor(dataConfig, worker, HGC, trackOptions) {
     this.dataConfig = dataConfig;
     this.uid = HGC.libraries.slugid.nice();
     this.worker = worker;
@@ -24,7 +24,7 @@ class VCFDataFetcher {
           dataConfig.vcfUrl,
           dataConfig.tbiUrl,
           dataConfig.chromSizesUrl,
-          dataConfig.maxTileWidth
+          trackOptions
         )
         .then(() => this.worker);
     });
