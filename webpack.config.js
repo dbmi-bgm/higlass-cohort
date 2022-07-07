@@ -171,7 +171,8 @@ const libraryConfig = {
     }),
     new UnminifiedWebpackPlugin(),
     new ThreadsPlugin(),
-    new WaitPlugin('dist/worker.js'),
+    new WaitPlugin('dist/cohort-worker.js'),
+    new WaitPlugin('dist/genelist-worker.js'),
   ],
 };
 
