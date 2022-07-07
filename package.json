@@ -1,7 +1,7 @@
 {
   "name": "higlass-cohort",
-  "version": "0.1.1",
-  "description": "HiGlass Cohort Track",
+  "version": "0.2.0",
+  "description": "HiGlass track for Case/Control analysis in CGAP",
   "keywords": [
     "HiGlass",
     "Track"
