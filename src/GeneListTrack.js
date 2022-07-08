@@ -317,8 +317,8 @@ varying vec4 vColor;
 
         mouseOverHtml +=
           `<table style="margin-top:3px;${borderCss}">` +
-          `<tr style="background-color:#ececec;margin-top:3px;${borderCss}"><td colspan="2"><strong>Gene:</strong> ${segment.geneName} (${segment.geneId})</td></tr>` +
-          `<tr><td colspan="2"><strong>Association tests (-log10 p):</td></tr>` +
+          `<tr style="background-color:#ececec;margin-top:3px;${borderCss}"><td ${al} colspan="2"><strong>Gene:</strong> ${segment.geneName} (${segment.geneId})</td></tr>` +
+          `<tr><td ${al} colspan="2"><strong>Association tests (-log10 p):</td></tr>` +
           statHtml +
           isSignificantHtml +
           `</table>`;

@@ -105,14 +105,6 @@ const BaseTrack = (HGC, ...args) => {
       );
 
       const gSegment = document.createElement('g');
-      const labelGraphics = this.subTracks[0].labelGraphics;
-
-      gSegment.setAttribute(
-        'transform',
-        `translate(${labelGraphics.position.x},${labelGraphics.position.y})` +
-          `scale(${labelGraphics.scale.x},${labelGraphics.scale.y})`,
-      );
-
       output.appendChild(gSegment);
 
       const b64string = HGC.services.pixiRenderer.plugins.extract.base64(
