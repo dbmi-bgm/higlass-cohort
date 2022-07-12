@@ -182,6 +182,8 @@ const CohortTrack = (HGC, ...args) => {
       ) {
         this.initSubTracks();
       }
+       
+      this.createLabelGraphics();
       this.updateExistingGraphics();
       this.prevOptions = Object.assign({}, options);
     }
@@ -218,49 +220,9 @@ const CohortTrack = (HGC, ...args) => {
       });
     }
 
-    createLegendGraphics() {
+    drawHorizontalLines() {
       const mainTrack = this.subTracks[0];
-      mainTrack.legendUtils.resetLegend(mainTrack.legendGraphics);
-      if (this.options.mainDisplay === 'deltaAF') {
-        mainTrack.legendUtils.createLegend(
-          mainTrack.legendGraphics,
-          1,
-          mainTrack.numLabels,
-          0,
-          mainTrack.height / 2,
-        );
-        mainTrack.legendUtils.createLegend(
-          mainTrack.legendGraphics,
-          1,
-          mainTrack.numLabels,
-          mainTrack.height / 2,
-          mainTrack.height / 2,
-          true,
-        );
-      } else {
-        mainTrack.legendUtils.createLegend(
-          mainTrack.legendGraphics,
-          1,
-          mainTrack.numLabels,
-          0,
-          mainTrack.height,
-        );
-      }
       mainTrack.legendUtils.setBaseLineLevel(mainTrack.baseLineLevel);
-
-      this.subTracks.forEach((subTrack, i) => {
-        if (i === 0) {
-          return;
-        }
-        subTrack.legendUtils.resetLegend(subTrack.legendGraphics);
-        subTrack.legendUtils.createLegend(
-          subTrack.legendGraphics,
-          1,
-          subTrack.numLabels,
-          0,
-          subTrack.height,
-        );
-      });
 
       this.subTracks.forEach((subTrack) => {
         subTrack.legendUtils.drawHorizontalLines(
@@ -271,14 +233,68 @@ const CohortTrack = (HGC, ...args) => {
       });
     }
 
+    // REDUNDANT
+    // createLegendGraphics() {
+    //   const mainTrack = this.subTracks[0];
+    //   mainTrack.legendUtils.resetLegend(mainTrack.legendGraphics);
+    //   if (this.options.mainDisplay === 'deltaAF') {
+    //     mainTrack.legendUtils.createLegend(
+    //       mainTrack.legendGraphics,
+    //       1,
+    //       mainTrack.numLabels,
+    //       0,
+    //       mainTrack.height / 2,
+    //     );
+    //     mainTrack.legendUtils.createLegend(
+    //       mainTrack.legendGraphics,
+    //       1,
+    //       mainTrack.numLabels,
+    //       mainTrack.height / 2,
+    //       mainTrack.height / 2,
+    //       true,
+    //     );
+    //   } else {
+    //     mainTrack.legendUtils.createLegend(
+    //       mainTrack.legendGraphics,
+    //       1,
+    //       mainTrack.numLabels,
+    //       0,
+    //       mainTrack.height,
+    //     );
+    //   }
+    //   mainTrack.legendUtils.setBaseLineLevel(mainTrack.baseLineLevel);
+
+    //   this.subTracks.forEach((subTrack, i) => {
+    //     if (i === 0) {
+    //       return;
+    //     }
+    //     subTrack.legendUtils.resetLegend(subTrack.legendGraphics);
+    //     subTrack.legendUtils.createLegend(
+    //       subTrack.legendGraphics,
+    //       1,
+    //       subTrack.numLabels,
+    //       0,
+    //       subTrack.height,
+    //     );
+    //   });
+
+    //   this.subTracks.forEach((subTrack) => {
+    //     subTrack.legendUtils.drawHorizontalLines(
+    //       subTrack.bgGraphics,
+    //       0,
+    //       this.dimensions[0],
+    //     );
+    //   });
+    // }
+
     updateVariantsInView() {
       this.variantsInView = [];
       this.variantList.forEach((variant) => {
         const xPos = this._xScale(variant.from);
         if (
           xPos > 0 &&
-          xPos < this.dimensions[0] &&
-          this.options.consequenceLevels.includes(variant.consequenceLevel)
+          xPos < this.dimensions[0] //&&
+          //this.options.consequenceLevels.includes(variant.consequenceLevel)
         ) {
           this.variantsInView.push(variant);
         }
@@ -286,6 +302,10 @@ const CohortTrack = (HGC, ...args) => {
     }
 
     drawBarCharts() {
+
+      if (!this.options.showAlleleFrequencies) {
+        return;
+      }
       let maxAF = 0;
       let minAF = 1;
 
@@ -629,10 +649,8 @@ const CohortTrack = (HGC, ...args) => {
     }
 
     updateExistingGraphics() {
-      this.loadingText.text = 'Rendering...';
 
-      this.createLegendGraphics();
-      this.createLabelGraphics();
+      this.loadingText.text = 'Rendering...';
 
       if (
         !eqSet(this.visibleTileIds, new Set(Object.keys(this.fetchedTiles)))
@@ -654,7 +672,8 @@ const CohortTrack = (HGC, ...args) => {
             this.dataFetcher.uid,
             Object.values(this.fetchedTiles).map((x) => x.remoteId),
             this._xScale.domain(),
-            this._xScale.range()
+            this._xScale.range(),
+            this.options
           )
           .then((toRender) => {
             this.loadingText.visible = false;
@@ -673,6 +692,7 @@ const CohortTrack = (HGC, ...args) => {
 
             this.drawLollipops();
             this.drawBarCharts();
+            this.drawHorizontalLines();
 
             this.clearNotification(this.subTracks[0]);
             if (this.maxZoom !== this.calculateZoomLevel()) {
@@ -725,7 +745,7 @@ const CohortTrack = (HGC, ...args) => {
 
     getMouseOverHtml(trackX, trackYIn) {
       this.mouseOverGraphics.clear();
-      requestAnimationFrame(this.animate);
+      //requestAnimationFrame(this.animate);
       const trackY = invY(trackYIn, this.valueScaleTransform);
       //const vHeight = this.options.variantHeight * this.valueScaleTransform.k;
 

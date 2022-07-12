@@ -81,7 +81,6 @@ const chromSizes = {};
 const chromInfos = {};
 const tileValues = new LRU({ max: MAX_TILES });
 const tilesetInfos = {};
-let trackOptions = {};
 
 // indexed by uuid
 const dataConfs = {};
@@ -97,7 +96,6 @@ const init = (uid, vcfUrl, tbiUrl, chromSizesUrl, tOptions) => {
     chromSizes, // passed and filled by reference
     dataConfs, // passed and filled by reference
   );
-  trackOptions = tOptions;
 };
 
 const tilesetInfo = (uid) => {
@@ -196,7 +194,7 @@ const fetchTilesDebounced = async (uid, tileIds) => {
 /// Render and Retrieval Functions
 ///////////////////////////////////////////////////
 
-const retrieveSegments = (uid, tileIds, domain, scaleRange) => {
+const retrieveSegments = (uid, tileIds, domain, scaleRange, trackOptions) => {
   const allSegments = {};
 
   for (const tileId of tileIds) {
@@ -213,9 +211,12 @@ const retrieveSegments = (uid, tileIds, domain, scaleRange) => {
   }
 
   const segmentList = Object.values(allSegments);
+  const segmentListFiltered = segmentList.filter((segment) =>
+    trackOptions.consequenceLevels.includes(segment.consequenceLevel),
+  );
 
   const objData = {
-    variants: segmentList,
+    variants: segmentListFiltered,
     xScaleDomain: domain,
     xScaleRange: scaleRange,
   };
