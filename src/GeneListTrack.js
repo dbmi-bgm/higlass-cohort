@@ -3,7 +3,7 @@ import MyWorkerWeb from 'raw-loader!../dist/genelist-worker.js';
 import { spawn, BlobWorker } from 'threads';
 import { COLORS } from './vcf-utils';
 import LegendUtils from './legend-utils';
-import GeneDetails from './GeneDetails.jsx';
+import GeneDetails from './GeneDetails';
 import VariantDetailFetcher from './variant-detail-fetcher';
 import { format } from 'd3-format';
 import { scaleLinear, scaleLog } from 'd3-scale';

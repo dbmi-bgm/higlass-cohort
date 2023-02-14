@@ -1,10 +1,7 @@
 import React from 'react';
-import PropTypes from 'prop-types';
+//import PropTypes from 'prop-types';
 import { format } from 'd3-format';
 
-const tableStyle = {
-  fontSize: '12px',
-};
 
 class VariantDetails extends React.Component {
   constructor(props) {
@@ -63,7 +60,7 @@ class VariantDetails extends React.Component {
         const sample_id = sample_[1];
         affectedIndDiv.push(
           <div>
-            <small><a href={portal_id} target="_blank">{sample_id}</a></small>
+            <a href={portal_id} target="_blank">{sample_id}</a>
           </div>
         )
       });
@@ -78,7 +75,7 @@ class VariantDetails extends React.Component {
     return (
       <div>
         <div className="py-2">Variant details</div>
-        <table className="table table-sm table-hover bg-light" style={tableStyle}>
+        <table className="table table-sm table-hover text-left bg-light">
           <tbody>
             <tr>
               <td>Position</td>
@@ -96,7 +93,7 @@ class VariantDetails extends React.Component {
         </table>
 
         <div className="py-2">Occurrences</div>
-        <table className="table table-sm table-hover bg-light" style={tableStyle}>
+        <table className="table table-sm table-hover text-left bg-light">
           <thead>
             <tr>
               <th></th>
@@ -132,7 +129,7 @@ class VariantDetails extends React.Component {
         </table>
 
         <div className="py-2">Variant association test statistics</div>
-        <table className="table table-sm table-hover bg-light" style={tableStyle}>
+        <table className="table table-sm table-hover text-left bg-light">
           <thead>
             <tr>
               <th></th>
@@ -172,7 +169,7 @@ class VariantDetails extends React.Component {
         </table>
 
         <div className="py-2">Predictors</div>
-        <table className="table table-sm table-hover bg-light" style={tableStyle}>
+        <table className="table table-sm table-hover text-left bg-light">
           <thead>
             <tr>
               <th>Prediction tool</th>

@@ -3,7 +3,7 @@ import MyWorkerWeb from 'raw-loader!../dist/cohort-worker.js';
 import { spawn, BlobWorker } from 'threads';
 import { COLORS } from './vcf-utils';
 import LegendUtils from './legend-utils';
-import VariantDetails from './VariantDetails.jsx';
+import VariantDetails from './VariantDetails';
 import VariantDetailFetcher from './variant-detail-fetcher';
 import { format } from 'd3-format';
 import { scaleLinear, scaleLog } from 'd3-scale';

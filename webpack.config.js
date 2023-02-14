@@ -51,6 +51,7 @@ const workerConfigGeneList = {
   plugins: [new UnminifiedWebpackPlugin(), new ThreadsPlugin()],
 };
 
+
 const libraryConfig = {
   output: {
     filename: 'higlass-cohort.min.js',
@@ -64,6 +65,9 @@ const libraryConfig = {
     writeToDisk: true,
     port: 8080,
     open: false
+  },
+  resolve: {
+    extensions: ['.js', '.jsx'],
   },
   optimization: {
     minimize: process.env.NODE_ENV === 'production' ? true : false,
@@ -81,6 +85,7 @@ const libraryConfig = {
     },
   },
   module: {
+   
     rules: [
       // Run ESLint first
       /*
@@ -95,7 +100,7 @@ const libraryConfig = {
       */
       // Transpile the ESD6 files to ES5
       {
-        test: /\.jsx$/,
+        test: /\.js[x]?$/,
         exclude: /node_modules/,
         use: {
           loader: 'babel-loader',

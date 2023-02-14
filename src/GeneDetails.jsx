@@ -1,31 +1,8 @@
 import React from 'react';
-import PropTypes from 'prop-types';
+//import PropTypes from 'prop-types';
 import { SIGNIFICANCE_THRESHOLD } from './config';
 import { getMasksPerSnp } from './misc-utils';
 import { format } from 'd3-format';
-
-// CSS styles
-const tableStyle = {
-  fontSize: '12px',
-};
-// const tdValStyle = {
-//   textAlign: 'center',
-//   padding: '0px 5px',
-// };
-// const tdValHighlightedStyle = {
-//   textAlign: 'center',
-//   backgroundColor: 'lightgreen',
-//   padding: '0px 5px',
-// };
-// const tdMaskStyle = {
-//   fontWeight: 'bold',
-//   textAlign: 'center',
-//   padding: '0px 5px',
-// };
-// const tdTestStyle = {
-//   fontWeight: 'bold',
-//   padding: '0px 5px',
-// };
 
 
 class GeneDetails extends React.Component {
@@ -40,7 +17,6 @@ class GeneDetails extends React.Component {
     };
 
   }
-
 
 
   render() {
@@ -99,7 +75,7 @@ class GeneDetails extends React.Component {
     return(
     <div>
       <div className='py-2'>Gene-based association test results (-log10 p)</div>
-      <table className="table table-sm table-hover" style={tableStyle}>
+      <table className="table table-sm table-hover text-left">
         <thead>
           <tr>{masks}</tr>
         </thead>
@@ -109,7 +85,7 @@ class GeneDetails extends React.Component {
       </table>
 
       <div className='pt-3 pb-2'>Variants included in each mask</div>
-      <table className="table table-sm table-hover" style={tableStyle}>
+      <table className="table table-sm table-hover text-left">
         <thead>
           <tr>{masks}</tr>
         </thead>
