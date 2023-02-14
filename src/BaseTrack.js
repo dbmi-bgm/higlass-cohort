@@ -1,6 +1,7 @@
 import { getTilePosAndDimensions } from './misc-utils';
 
-const BaseTrack = (HGC, ...args) => {
+//const BaseTrack = (HGC, ...args) => {
+function BaseTrack(HGC, ...args) {
   class BaseTrackClass extends HGC.tracks.Tiled1DPixiTrack {
     constructor(context, options) {
       super(context, options);

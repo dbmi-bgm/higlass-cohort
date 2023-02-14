@@ -2,7 +2,7 @@ import sanitizeHtml from 'sanitize-html';
 
 export const sanitizeMouseOverHtml = (html) => {
   return sanitizeHtml(html, {
-    allowedTags: ['table', 'tr', 'td', 'strong', 'br'],
+    allowedTags: ['table', 'tr', 'td', 'strong', 'br', 'i'],
     allowedAttributes: {
       tr: ['style'],
       td: ['colspan', 'style'],
@@ -22,6 +22,7 @@ export const sanitizeMouseOverHtml = (html) => {
           /^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/,
         ],
         'text-align': [/^left$/, /^right$/, /^center$/],
+        'font-size': [/^\d+(?:px|em|%)$/],
       },
       table: {
         'margin-top': [/^\d+(?:px|em|%)$/],
@@ -151,6 +152,26 @@ export const createColorTexture = (PIXI, colors) => {
 
   return [PIXI.Texture.fromBuffer(rgba, colorTexRes, colorTexRes), colorTexRes];
 };
+
+export const getMasksPerSnp = (availableMasks, segment) => {
+  const snps = {};
+  availableMasks.forEach((mask) => {
+    if(!segment[`${mask}_SNPS`]){
+      return;
+    }
+    const currentSnps = segment[`${mask}_SNPS`];
+    currentSnps.forEach((snp) => {
+      if(snp in snps){
+        snps[snp].push(mask);
+      }else{
+        snps[snp] = [mask];
+      }
+    });
+  });
+  return snps;
+};
+
+
 
 
 

@@ -3,7 +3,7 @@ import MyWorkerWeb from 'raw-loader!../dist/genelist-worker.js';
 import { spawn, BlobWorker } from 'threads';
 import { COLORS } from './vcf-utils';
 import LegendUtils from './legend-utils';
-import VariantDetails from './VariantDetails';
+import GeneDetails from './GeneDetails.jsx';
 import VariantDetailFetcher from './variant-detail-fetcher';
 import { format } from 'd3-format';
 import { scaleLinear, scaleLog } from 'd3-scale';
@@ -18,13 +18,12 @@ import {
   all,
   isIn,
   sanitizeMouseOverHtml,
-  createColorTexture
+  createColorTexture,
 } from './misc-utils';
 import BaseTrack from './BaseTrack';
 
-
-
-const GeneListTrack = (HGC, ...args) => {
+//const GeneListTrack = (HGC, ...args) => {
+function GeneListTrack(HGC, ...args) {
   class GeneListTrackClass extends BaseTrack(HGC, ...args) {
     constructor(context, options) {
       const worker = spawn(BlobWorker.fromText(MyWorkerWeb));
@@ -44,6 +43,8 @@ const GeneListTrack = (HGC, ...args) => {
 
       this.trackId = this.id;
       this.viewId = context.viewUid;
+
+      this.mouseClickData = null;
 
       // we scale the entire view up until a certain point
       // at which point we redraw everything to get rid of
@@ -73,7 +74,10 @@ const GeneListTrack = (HGC, ...args) => {
       this.setUpShaderAndTextures();
 
       this.prevOptions = Object.assign({}, options);
+
     }
+
+    
 
     initTrack() {
       this.pForeground.removeChildren();
@@ -177,7 +181,8 @@ varying vec4 vColor;
         false,
         true,
       );
-      const labelText = this.options.defaultStatistic + " (-log10 p)";
+      //const labelText = this.options.activeStatistic + " (-log10 p)";
+      const labelText = '-log10 (p-value)';
       this.legendUtils.drawAxisLabel(this.legendGraphics, labelText);
       this.legendUtils.drawHorizontalLines(this.bgGraphics, 0, trackWidth);
     }
@@ -207,7 +212,7 @@ varying vec4 vColor;
             this._xScale.domain(),
             this._xScale.range(),
             this.options,
-            this.legendUtils.currentLegendLevels // needed do that we draw the rects at the appropriate yLevels
+            this.legendUtils.currentLegendLevels, // needed do that we draw the rects at the appropriate yLevels
           )
           .then((toRender) => {
             this.loadingText.visible = false;
@@ -221,7 +226,7 @@ varying vec4 vColor;
             this.drawError();
             this.animate();
 
-            this.createLegendGraphics(toRender.defaultStatMax);
+            this.createLegendGraphics(toRender.activeStatMax);
 
             this.positions = new Float32Array(toRender.positionsBuffer);
             this.colors = new Float32Array(toRender.colorsBuffer);
@@ -278,14 +283,36 @@ varying vec4 vColor;
       });
     }
 
-    getMouseOverHtml(trackX, trackY) {
+    clickDialog() {
+      if (!this.mouseClickData) return;
 
+      this.pubSub.publish('geneSegmentHovered', {
+        includedSnps: "",
+      });
+
+      const geneName = this.mouseClickData.geneName;
+      const geneId = this.mouseClickData.geneId;
+
+      const props = {
+        segment: this.mouseClickData,
+        trackOptions: this.options,
+      };
+
+      restoreCursor();
+      return {
+        title: `Gene: ${geneName} (${geneId})`,
+        bodyComponent: GeneDetails,
+        bodyProps: props,
+      };
+    }
+
+    getMouseOverHtml(trackX, trackY) {
       this.mouseOverGraphics.clear();
       requestAnimationFrame(this.animate);
 
       const padding = 2;
       let filteredList = [];
-      const fromX = this.drawnAtScale()
+      const fromX = this.drawnAtScale();
       filteredList = this.visibleSegments.filter(
         (variant) =>
           trackY >= variant.fromY &&
@@ -294,7 +321,12 @@ varying vec4 vColor;
           trackX <= this._xScale(variant.to) + padding,
       );
 
-      if(filteredList.length === 0){
+      if (filteredList.length === 0) {
+        restoreCursor();
+        this.mouseClickData = null;
+        this.pubSub.publish('geneSegmentHovered', {
+          includedSnps: "",
+        });
         return;
       }
 
@@ -302,37 +334,44 @@ varying vec4 vColor;
 
       for (const segment of filteredList) {
         let statHtml = ``;
+        let infoHtml = ``;
 
         const al = 'style="text-align: left !important;"';
-        this.options.availableStatistics.forEach(stat => {
-          statHtml += `<tr><td ${al}>${stat}</td><td ${al}>${segment[stat]}</td></tr>`;
-        });
+        // this.options.availableStatistics.forEach(stat => {
+        //   statHtml += `<tr><td ${al}>${stat}</td><td ${al}>${segment[stat]}</td></tr>`;
+        // });
+        infoHtml += `<tr><td ${al}>Selected mask:</td><td ${al}>${this.options.activeMask}</td></tr>`;
+        infoHtml += `<tr><td ${al}>Selected association test:</td><td ${al}>${this.options.activeStatistic}</td></tr>`;
+        const statId = `${this.options.activeMask}_${this.options.activeStatistic}`;
+        infoHtml += `<tr><td ${al}>p-value (-log10)</td><td ${al}>${segment[statId]}</td></tr>`;
 
         const borderCss = 'border: 1px solid #333333;';
 
         let isSignificantHtml = ``;
-        if(segment.isSignificant){
-          isSignificantHtml = `<tr><td style="color:#027a02;padding-top:5px;text-align: left !important;" colspan="2"><strong>Statistically significant</strong></td></tr>`
+        if (segment.isSignificant) {
+          isSignificantHtml = `<tr><td style="color:#027a02;padding-top:5px;text-align: left !important;" colspan="2"><strong>Statistically significant</strong></td></tr>`;
         }
 
         mouseOverHtml +=
           `<table style="margin-top:3px;${borderCss}">` +
           `<tr style="background-color:#ececec;margin-top:3px;${borderCss}"><td ${al} colspan="2"><strong>Gene:</strong> ${segment.geneName} (${segment.geneId})</td></tr>` +
-          `<tr><td ${al} colspan="2"><strong>Association tests (-log10 p):</td></tr>` +
-          statHtml +
+          //`<tr><td ${al} colspan="2"><strong>Association tests (-log10 p):</strong></td></tr>` +
+          //statHtml +
+          infoHtml +
           isSignificantHtml +
+          `<tr><td style="text-align: left !important; font-size: 11px" colspan="2"><i>Click to see more information.</i></td></tr>` +
           `</table>`;
       }
 
-      if (filteredList.length > 0) {
-        //setCursor('pointer');
-        //this.mouseClickData = filteredList[0];
-        return sanitizeMouseOverHtml(mouseOverHtml);
-      }
+      const activeSegment = filteredList[0];
+      const includedSnps = activeSegment[`${this.options.activeMask}_SNPS`];
+      this.pubSub.publish('geneSegmentHovered', {
+        includedSnps: includedSnps || [],
+      });
 
-      restoreCursor();
-      this.mouseClickData = null;
-      return '';
+      setCursor('pointer');
+      this.mouseClickData = activeSegment;
+      return sanitizeMouseOverHtml(mouseOverHtml);
     }
 
     zoomed(newXScale, newYScale) {
@@ -352,7 +391,7 @@ varying vec4 vColor;
   }
 
   return new GeneListTrackClass(...args);
-};
+}
 
 const icon =
   '<svg width="16" height="16" xmlns="http://www.w3.org/2000/svg"> <!-- Created with Method Draw - http://github.com/duopixel/Method-Draw/ --> <g> <title>background</title> <rect fill="#fff" id="canvas_background" height="18" width="18" y="-1" x="-1"/> <g display="none" overflow="visible" y="0" x="0" height="100%" width="100%" id="canvasGrid"> <rect fill="url(#gridpattern)" stroke-width="0" y="0" x="0" height="100%" width="100%"/> </g> </g> <g> <title>Layer 1</title> <rect id="svg_1" height="0.5625" width="2.99997" y="3.21586" x="1.18756" stroke-width="1.5" stroke="#999999" fill="#000"/> <rect id="svg_3" height="0.5625" width="2.99997" y="7.71582" x="6.06252" stroke-width="1.5" stroke="#999999" fill="#000"/> <rect id="svg_4" height="0.5625" width="2.99997" y="3.21586" x="1.18756" stroke-width="1.5" stroke="#999999" fill="#000"/> <rect id="svg_5" height="0.5625" width="2.99997" y="3.90336" x="11.49997" stroke-width="1.5" stroke="#f73500" fill="#000"/> <rect id="svg_6" height="0.5625" width="2.99997" y="7.40333" x="11.62497" stroke-width="1.5" stroke="#999999" fill="#000"/> <rect id="svg_7" height="0.5625" width="2.99997" y="13.90327" x="5.93752" stroke-width="1.5" stroke="#f4f40e" fill="#000"/> </g> </svg>';
@@ -367,14 +406,23 @@ GeneListTrack.config = {
     'showMousePosition',
     'segmentHeight',
     'availableStatistics',
-    'defaultStatistic',
-    'includedGenes'
+    'activeStatistic',
+    'availableMasks',
+    'activeMask',
+    'includedGenes',
   ],
   defaultOptions: {
     showMousePosition: false,
     segmentHeight: 12,
-    availableStatistics: ['CMC', 'MB', 'VT', 'SKATO'],
-    defaultStatistic: 'CMC'
+    availableStatistics: ['BURDEN', 'SKAT', 'SKATO', 'ACATV', 'ACATO'],
+    activeStatistic: 'BURDEN',
+    availableMasks: [
+      'MASK_MISSENSE',
+      'MASK_CADD',
+      'MASK_MISSENSE_CADD',
+      'MASK_NONSENSE_SPLICE',
+    ],
+    activeMask: 'MASK_CADD',
   },
   optionsInfo: {},
 };

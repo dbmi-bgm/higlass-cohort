@@ -8,29 +8,43 @@ import {
   initBase,
 } from './tileset-utils';
 import { COLOR_IXS } from './vcf-utils';
+import { MAX_VISIBLE_GENES, SIGNIFICANCE_THRESHOLD } from './config';
 
 function currTime() {
   const d = new Date();
   return d.getTime();
 }
 
-const MAX_VISIBLE_GENES = 500;
 
 const vcfRecordToJson = (vcfRecord, chrName, options, chrOffset) => {
   const info = vcfRecord['INFO'];
+
+  // console.log(chrName, options, chrOffset);
+  // console.log(vcfRecord);
+  //console.log(info);
   const segment = {
     id: vcfRecord.ID[0],
     geneId: vcfRecord.ID[0],
-    geneName: info.NAME[0],
+    geneName: info.SYMBOL[0],
     chrName,
     chrOffset,
     from: vcfRecord.POS + chrOffset,
     to: info.END[0] + chrOffset,
   };
-  options.availableStatistics.forEach((t) => {
-    segment[t] = info[t][0];
+  options.availableMasks.forEach((m) => {
+    options.availableStatistics.forEach((t) => {
+      const test_id = `${m}_${t}`;
+      if(info[test_id]){
+        segment[test_id] = info[test_id][0];
+      }
+    });
+    // Add SNP lists
+    const snp_list_id = `${m}_SNPS`;
+    if(info[snp_list_id]){
+      segment[snp_list_id] = info[snp_list_id];
+    }
   });
-
+ 
   return segment;
 };
 
@@ -269,7 +283,12 @@ const renderSegments = (
   let segmentList = Object.values(allSegments);
   let lastSegment = null;
 
-  const defaultStat = trackOptions.defaultStatistic;
+  const activeStat = trackOptions.activeStatistic;
+  const activeMask = trackOptions.activeMask;
+  const activeStatId = `${activeMask}_${activeStat}`;
+
+  // Remove segment that don't have the current statistics for the current mask
+  segmentList = segmentList.filter((segment) => segment[activeStatId] !== undefined);
 
   // We are "indexing" the genes by id for faster filtering later
   const includedGenes = {};
@@ -283,18 +302,18 @@ const renderSegments = (
 
   if (segmentList.length > MAX_VISIBLE_GENES) {
     segmentList = segmentList
-      .sort((a, b) => b[defaultStat] - a[defaultStat])
+      .sort((a, b) => b[activeStatId] - a[activeStatId])
       .slice(0, MAX_VISIBLE_GENES);
   }
-
-  let defaultStatMax = 0.0;
+  
+  let activeStatMax = 0.0;
   segmentList.forEach((segment, j) => {
-    const defaultStatVal = segment[defaultStat];
-    defaultStatMax = Math.max(defaultStatMax, defaultStatVal);
+    const activeStatVal = segment[activeStatId];
+    activeStatMax = Math.max(activeStatMax, activeStatVal);
   });
 
   const yPosScale = scaleLinear()
-      .domain([0, defaultStatMax])
+      .domain([0, activeStatMax])
       .range([yLevelMax, yLevelMin]);
 
   segmentList.forEach((segment, j) => {
@@ -304,7 +323,7 @@ const renderSegments = (
     }
     //console.log(segment);
     lastSegment = segment;
-    const defaultStatVal = segment[defaultStat];
+    const activeStatVal = segment[activeStatId];
 
     const from = xScale(segment.from);
     const to = xScale(segment.to);
@@ -318,12 +337,12 @@ const renderSegments = (
 
     segment["isSignificant"] = false;
     let colorToUse = COLOR_IXS.LIGHTGREY;
-    if(defaultStatVal > 1.3){ // -log10(0.05)
+    if(activeStatVal > SIGNIFICANCE_THRESHOLD){
       colorToUse = COLOR_IXS.DARKGREEN;
       segment["isSignificant"] = true;
     }
 
-    yTop = yPosScale(defaultStatVal) - trackOptions.segmentHeight/2;
+    yTop = yPosScale(activeStatVal) - trackOptions.segmentHeight/2;
 
     // used in Mouseover
     segment["fromY"] = yTop;
@@ -342,8 +361,8 @@ const renderSegments = (
   });
 
   // // if it is 0, then there is no gene in view
-  if (defaultStatMax === 0.0) {
-    defaultStatMax = 1.0;
+  if (activeStatMax === 0.0) {
+    activeStatMax = 1.0;
   }
 
   const positionsBuffer = allPositions.slice(0, currPosition).buffer;
@@ -357,7 +376,7 @@ const renderSegments = (
     ixBuffer,
     xScaleDomain: domain,
     xScaleRange: scaleRange,
-    defaultStatMax,
+    activeStatMax,
   };
 
   return Transfer(objData, [positionsBuffer, colorsBuffer, ixBuffer]);

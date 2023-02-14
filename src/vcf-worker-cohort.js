@@ -12,25 +12,87 @@ function currTime() {
   return d.getTime();
 }
 
+function parseIntInfo(infoProp, index) {
+  let infoVal = infoProp ? parseInt(infoProp[index], 10) : null;
+  return !isNaN(infoVal) ? infoVal : null;
+}
+
+function parseFloatInfo(infoProp, index) {
+  let infoVal = infoProp ? parseFloat(infoProp[index]) : null;
+  return !isNaN(infoVal) ? infoVal : null;
+}
+
+function parseStringInfo(infoProp, index) {
+  return infoProp ? infoProp[index] : '';
+}
+
 const vcfRecordToJson = (vcfRecord, chrName, multires_chromName, chrOffset) => {
   const segments = [];
   const info = vcfRecord['INFO'];
+  //console.log(vcfRecord, chrName, multires_chromName, chrOffset);
 
   // VCF records can have multiple ALT. We create a segment for each of them
   vcfRecord['ALT'].forEach((alt, index) => {
-    // If the control AF is NA, we are setting it to 0
-    const deltaAfGnomad2 =
-      info.gnomADe2_AF[index] !== 'NA'
-        ? info.AF_proband[index] - info.gnomADe2_AF[index]
-        : info.AF_proband[index];
+    const transcript = parseStringInfo(info.transcript, index);
+    const case_AC = parseIntInfo(info.case_AC, index);
+    const case_AN = parseIntInfo(info.case_AN, index);
+    const case_AF = parseFloatInfo(info.case_AF, index);
+    const control_AC = parseIntInfo(info.control_AC, index);
+    const control_AN = parseIntInfo(info.control_AN, index);
+    const control_AF = parseFloatInfo(info.control_AF, index);
+    const gnomADg_AC = parseIntInfo(info.gnomADg_AC, index);
+    const gnomADg_AN = parseIntInfo(info.gnomADg_AN, index);
+    const gnomADg_AF = parseFloatInfo(info.gnomADg_AF, index);
+    const gnomADe2_AC = parseIntInfo(info.gnomADe2_AC, index);
+    const gnomADe2_AN = parseIntInfo(info.gnomADe2_AN, index);
+    const gnomADe2_AF = parseFloatInfo(info.gnomADe2_AF, index);
+    const most_severe_consequence = parseStringInfo(
+      info.most_severe_consequence,
+      index,
+    );
+    const level_most_severe_consequence = parseStringInfo(
+      info.level_most_severe_consequence,
+      index,
+    );
+    const cadd_raw_rs = parseFloatInfo(info.cadd_raw_rs, index);
+    const cadd_phred = parseFloatInfo(info.cadd_phred, index);
+    const polyphen_pred = parseStringInfo(info.polyphen_pred, index);
+    const polyphen_rankscore = parseFloatInfo(info.polyphen_rankscore, index);
+    const polyphen_score = parseFloatInfo(info.polyphen_score, index);
+    const gerp_score = parseFloatInfo(info.gerp_score, index);
+    const gerp_rankscore = parseFloatInfo(info.gerp_rankscore, index);
+    const sift_rankscore = parseFloatInfo(info.sift_rankscore, index);
+    const sift_pred = parseStringInfo(info.sift_pred, index);
+    const sift_score = parseFloatInfo(info.sift_score, index);
+    const spliceai_score_max = parseFloatInfo(info.spliceai_score_max, index);
+    const fisher_or_gnomADg = parseFloatInfo(info.fisher_or_gnomADg, index);
+    const fisher_ml10p_gnomADg = parseFloatInfo(
+      info.fisher_ml10p_gnomADg,
+      index,
+    );
+    const fisher_or_gnomADe2 = parseFloatInfo(info.fisher_or_gnomADe2, index);
+    const fisher_ml10p_gnomADe2 = parseFloatInfo(
+      info.fisher_ml10p_gnomADe2,
+      index,
+    );
+    const fisher_or_control = parseFloatInfo(info.fisher_or_control, index);
+    const fisher_ml10p_control = parseFloatInfo(
+      info.fisher_ml10p_control,
+      index,
+    );
+    const regenie_ml10p = parseFloatInfo(info.regenie_ml10p, index);
+    const regenie_beta = parseStringInfo(info.regenie_beta, index);
+    const regenie_chisq = parseStringInfo(info.regenie_chisq, index);
+    const regenie_se = parseStringInfo(info.regenie_se, index);
 
-    const deltaAfGnomad3 =
-      info.gnomADg_AF[index] !== 'NA'
-        ? info.AF_proband[index] - info.gnomADg_AF[index]
-        : info.AF_proband[index];
+    // If the control AF is not available, we are setting it to 0
+    const deltaAfControl = case_AF - control_AF;
+    const deltaAfGnomad2 = gnomADe2_AF ? case_AF - gnomADe2_AF : case_AF;
+    const deltaAfGnomad3 = gnomADg_AF ? case_AF - gnomADg_AF : case_AF;
 
     const segment = {
-      id: slugid.nice(),
+      //id: slugid.nice(),
+      id: `${chrName}_${vcfRecord.POS}_${vcfRecord.REF}_${alt}`,
       alt: alt,
       ref: vcfRecord.REF,
       from: vcfRecord.POS + chrOffset,
@@ -38,25 +100,49 @@ const vcfRecordToJson = (vcfRecord, chrName, multires_chromName, chrOffset) => {
       chrName,
       multiresChrName: multires_chromName,
       chrOffset,
-      alleleCountCases: info.AC_proband[index],
-      alleleCountGnomad2: info.gnomADe2_AC[index],
-      alleleCountGnomad3: info.gnomADg_AC[index],
-      alleleFrequencyCases: info.AF_proband[index],
-      alleleFrequencyGnomad2: info.gnomADe2_AF[index],
-      alleleFrequencyGnomad3: info.gnomADg_AF[index],
+      case_AC,
+      case_AN,
+      case_AF,
+      control_AC,
+      control_AN,
+      control_AF,
+      gnomADg_AC,
+      gnomADg_AN,
+      gnomADg_AF,
+      gnomADe2_AC,
+      gnomADe2_AN,
+      gnomADe2_AF,
+      most_severe_consequence,
+      level_most_severe_consequence,
+      cadd_raw_rs,
+      cadd_phred,
+      polyphen_pred,
+      polyphen_rankscore,
+      polyphen_score,
+      gerp_score,
+      gerp_rankscore,
+      sift_rankscore,
+      sift_pred,
+      sift_score,
+      spliceai_score_max,
+      fisher_or_gnomADg,
+      fisher_ml10p_gnomADg,
+      fisher_or_gnomADe2,
+      fisher_ml10p_gnomADe2,
+      fisher_or_control,
+      fisher_ml10p_control,
+      regenie_ml10p,
+      regenie_beta,
+      regenie_chisq,
+      regenie_se,
+      transcript,
+      deltaAfAbsControl: Math.abs(deltaAfControl),
+      deltaAfControl,
       deltaAfAbsGnomad2: Math.abs(deltaAfGnomad2),
       deltaAfGnomad2: deltaAfGnomad2,
       deltaAfAbsGnomad3: Math.abs(deltaAfGnomad3),
       deltaAfGnomad3: deltaAfGnomad3,
-      alleleNumberCases: info.AN_proband[index],
-      alleleNumberGnomad2: info.gnomADe2_AN[index],
-      alleleNumberGnomad3: info.gnomADg_AN[index],
-      fisherGnomad2OR: info.fisher_gnomADv2_OR[index],
-      fisherGnomad3OR: info.fisher_gnomADv3_OR[index],
-      fisherGnomad2logp: info.fisher_gnomADv2_minuslog10p[index],
-      fisherGnomad3logp: info.fisher_gnomADv3_minuslog10p[index],
-      consequenceLevel: info.level_most_severe_consequence[index],
-      mostSevereConsequence: info.most_severe_consequence[index],
+
       //info: extractColumnFromVcfInfo(info, index),
       //row: null,
       type: 'variant',
@@ -212,7 +298,9 @@ const retrieveSegments = (uid, tileIds, domain, scaleRange, trackOptions) => {
 
   const segmentList = Object.values(allSegments);
   const segmentListFiltered = segmentList.filter((segment) =>
-    trackOptions.consequenceLevels.includes(segment.consequenceLevel),
+    trackOptions.consequenceLevels.includes(
+      segment.level_most_severe_consequence,
+    ) && segment.cadd_phred >= trackOptions.minCadd && segment.cadd_phred <= trackOptions.maxCadd,
   );
 
   const objData = {

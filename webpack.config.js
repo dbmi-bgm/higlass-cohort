@@ -95,7 +95,7 @@ const libraryConfig = {
       */
       // Transpile the ESD6 files to ES5
       {
-        test: /\.js$/,
+        test: /\.jsx$/,
         exclude: /node_modules/,
         use: {
           loader: 'babel-loader',
