@@ -84,7 +84,7 @@ class GeneDetails extends React.Component {
         </tbody>
       </table>
 
-      <div className='pt-3 pb-2'>Variants included in each mask</div>
+      <div className='pt-2 pb-1'>Variants included in each mask</div>
       <table className="table table-sm table-hover text-left">
         <thead>
           <tr>{masks}</tr>

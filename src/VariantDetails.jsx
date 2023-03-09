@@ -74,7 +74,7 @@ class VariantDetails extends React.Component {
 
     return (
       <div>
-        <div className="py-2">Variant details</div>
+        <div className="pt-2 pb-1">Variant details</div>
         <table className="table table-sm table-hover text-left bg-light">
           <tbody>
             <tr>
@@ -92,7 +92,7 @@ class VariantDetails extends React.Component {
           </tbody>
         </table>
 
-        <div className="py-2">Occurrences</div>
+        <div className="pt-2 pb-1">Occurrences</div>
         <table className="table table-sm table-hover text-left bg-light">
           <thead>
             <tr>
@@ -128,7 +128,7 @@ class VariantDetails extends React.Component {
           </tbody>
         </table>
 
-        <div className="py-2">Variant association test statistics</div>
+        <div className="pt-2 pb-1">Variant association test statistics</div>
         <table className="table table-sm table-hover text-left bg-light">
           <thead>
             <tr>
@@ -168,7 +168,7 @@ class VariantDetails extends React.Component {
           </tbody>
         </table>
 
-        <div className="py-2">Predictors</div>
+        <div className="pt-2 pb-1">Predictors</div>
         <table className="table table-sm table-hover text-left bg-light">
           <thead>
             <tr>
@@ -214,7 +214,7 @@ class VariantDetails extends React.Component {
           </tbody>
         </table>
 
-        <div className="py-2">Cases with this variant</div>
+        <div className="pt-2 pb-1">Cases with this variant</div>
         {affectedIndDiv}
       </div>
     );
