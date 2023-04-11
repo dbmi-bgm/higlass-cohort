@@ -87,17 +87,6 @@ const libraryConfig = {
   module: {
    
     rules: [
-      // Run ESLint first
-      /*
-      {
-        enforce: 'pre',
-        test: /\.js$/,
-        exclude: /node_modules/,
-        use: {
-          loader: 'eslint-loader',
-        },
-      },
-      */
       // Transpile the ESD6 files to ES5
       {
         test: /\.js[x]?$/,

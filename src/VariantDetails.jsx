@@ -26,7 +26,6 @@ class VariantDetails extends React.Component {
       if (!records.length) {
         this.setState({ loading: false, variantNotFound: true });
       }
-      console.log(records)
       this.setState({ loading: false, affectedIndividuals: records[0] });
     });
   }
@@ -40,31 +39,53 @@ class VariantDetails extends React.Component {
   }
 
   render() {
-    let affectedIndDiv = <div></div>;
+    let sampleInfoTable = <div></div>;
     if (this.state.loading) {
-      affectedIndDiv = <div className="text-center">Loading...</div>;
+      sampleInfoTable = <div className="text-center">Loading...</div>;
     } else if (this.state.variantNotFound) {
-      affectedIndDiv = (
+      sampleInfoTable = (
         <div className="text-center">No data found for this variant</div>
       );
     } else if (!this.state.affectedIndividuals) {
-      affectedIndDiv = (
+      sampleInfoTable = (
         <div className="text-center">Variant details are not available</div>
       );
     } else {
       const samples = this.state.affectedIndividuals['INFO']['samples'];
-      affectedIndDiv = [];
+      const sampleInfoTableRows = [];
+
       samples.forEach((sample) => {
+        if(sample === ""){
+          return;
+        }
         const sample_ = sample.split(":");
-        const portal_id = sample_[0];
-        const sample_id = sample_[1];
-        affectedIndDiv.push(
-          <div>
-            <a href={portal_id} target="_blank">{sample_id}</a>
-          </div>
+        const sampleId = sample_[0];
+        const linktoId = sample_[1];
+        const caseOrControl = sample_[2] === "True" ? "Case": "Control";
+        const tissueType = sample_[3] === "" ? "NA" : sample_[3];
+        const contactHtml = sample_[4] === "" ? "" : <a href={"mailto:"+sample_[4]}>&#9993;</a>;
+        
+        sampleInfoTableRows.push(
+          <tr>
+            <td className="text-break"><a href={linktoId} target="_blank">{sampleId}</a></td>
+            <td className="text-center">{caseOrControl}</td>
+            <td className="text-center">{tissueType}</td>
+            <td className="text-center">{contactHtml}</td>
+          </tr>
         )
       });
-      
+      sampleInfoTable = 
+        <table className="table table-sm table-hover text-left bg-light">
+          <thead>
+            <tr>
+              <th>Sample</th>
+              <th>Case/Control</th>
+              <th>Tissue type</th>
+              <th>Contact</th>
+            </tr>
+          </thead>
+          <tbody>{sampleInfoTableRows}</tbody>
+        </table>;
     }
 
     const chr = this.variantInfo.chrName;
@@ -214,8 +235,8 @@ class VariantDetails extends React.Component {
           </tbody>
         </table>
 
-        <div className="pt-2 pb-1">Cases with this variant</div>
-        {affectedIndDiv}
+        <div className="pt-2 pb-1">Samples with this variant</div>
+        {sampleInfoTable}
       </div>
     );
   }

@@ -1,6 +1,6 @@
 {
   "name": "higlass-cohort",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "HiGlass track for Case/Control analysis in CGAP",
   "keywords": [
     "HiGlass",
@@ -28,19 +28,11 @@
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
-    "babel-eslint": "^10.0.1",
     "babel-loader": "^7.1.4",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "babel-preset-react": "^6.11.1",
     "before-build-webpack": "^0.2.11",
-    "eslint": "^8.7.0",
-    "eslint-config-airbnb": "^19.0.4",
-    "eslint-config-prettier": "^8.3.0",
-    "eslint-plugin-import": "^2.14.0",
-    "eslint-plugin-jsx-a11y": "^6.1.2",
-    "eslint-plugin-prettier": "^4.0.0",
-    "eslint-plugin-react": "^7.14.2",
     "file-loader": "^1.1.11",
     "html-loader": "^0.5.5",
     "html-webpack-plugin": "^4.5.2",
@@ -48,7 +40,7 @@
     "slugid": "^2.0.0",
     "string-replace-loader": "^2.2.0",
     "style-loader": "^0.20.3",
-    "terser-webpack-plugin": "^3.0.1",
+    "terser-webpack-plugin": "^4.0.1",
     "threads-plugin": "^1.4.0",
     "unminified-webpack-plugin": "^2.0.0",
     "webpack": "^4.20.2",
@@ -78,6 +70,6 @@
     "react-dom": "^16.6.3",
     "reactcss": "^1.2.3",
     "sanitize-html": "2.7.3",
-    "threads": "v1.6.3"
+    "threads": "v1.7.0"
   }
 }
