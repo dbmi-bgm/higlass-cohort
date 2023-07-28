@@ -46,14 +46,20 @@ class LegendUtils {
     this.baseLineLevel = baseLineLevel;
   }
 
-  drawLabel(labelGraphics, trackwidth, subTrackId, colorScaleHex, consequenceLevels){
+  drawLabel(labelGraphics, trackwidth, subTrackId, colorScaleHex, colorScaleLegend){
 
     labelGraphics.clear();
     labelGraphics.removeChildren();
 
+    if(!colorScaleLegend['visible']){
+      return;
+    }
+
+    const colorScaleLegendValues = colorScaleLegend["values"];
+
     if(subTrackId.includes('main')){
       const boxWidth = 140;
-      const boxHeight = consequenceLevels.length > 2 ? 73 : 53;
+      const boxHeight = colorScaleLegendValues.length > 2 ? 73 : 53;
       const marginTop = 10;
       labelGraphics.beginFill(this.HGC.utils.colorToHex('#ffffff'));
       labelGraphics.drawRect(trackwidth - boxWidth, marginTop, boxWidth, boxHeight);
@@ -77,7 +83,7 @@ class LegendUtils {
       const paddingTB = 3;
       let offsetTop = btext.position.y + btext.height + paddingTB;
       let marginLeft = 115;
-      consequenceLevels.forEach((level, index) => {
+      colorScaleLegendValues.forEach((level, index) => {
         //const level = cs["level"];
         const cs = colorScaleHex.filter(cs => cs["level"] === level)
         const colorHex = cs[0]["colorHex"];

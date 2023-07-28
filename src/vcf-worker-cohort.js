@@ -26,70 +26,32 @@ function parseStringInfo(infoProp, index) {
   return infoProp ? infoProp[index] : '';
 }
 
+function parseStringListInfo(infoProp, index) {
+  return infoProp ? infoProp[index].split('|') : [];
+}
+
+function parseInfoField(infoProp, index, infoFieldType){
+  if(infoFieldType === "string"){
+    return parseStringInfo(infoProp, index);
+  }else if(infoFieldType === "string_list"){
+    return parseStringListInfo(infoProp, index);
+  }else if(infoFieldType === "int"){
+    return parseIntInfo(infoProp, index);
+  }else if(infoFieldType === "float"){
+    return parseFloatInfo(infoProp, index);
+  }
+  return "";
+}
+
 const vcfRecordToJson = (vcfRecord, chrName, multires_chromName, chrOffset) => {
   const segments = [];
   const info = vcfRecord['INFO'];
+
   //console.log(vcfRecord, chrName, multires_chromName, chrOffset);
 
   // VCF records can have multiple ALT. We create a segment for each of them
   vcfRecord['ALT'].forEach((alt, index) => {
-    const transcript = parseStringInfo(info.transcript, index);
-    const case_AC = parseIntInfo(info.case_AC, index);
-    const case_AN = parseIntInfo(info.case_AN, index);
-    const case_AF = parseFloatInfo(info.case_AF, index);
-    const control_AC = parseIntInfo(info.control_AC, index);
-    const control_AN = parseIntInfo(info.control_AN, index);
-    const control_AF = parseFloatInfo(info.control_AF, index);
-    const gnomADg_AC = parseIntInfo(info.gnomADg_AC, index);
-    const gnomADg_AN = parseIntInfo(info.gnomADg_AN, index);
-    const gnomADg_AF = parseFloatInfo(info.gnomADg_AF, index);
-    const gnomADe2_AC = parseIntInfo(info.gnomADe2_AC, index);
-    const gnomADe2_AN = parseIntInfo(info.gnomADe2_AN, index);
-    const gnomADe2_AF = parseFloatInfo(info.gnomADe2_AF, index);
-    const most_severe_consequence = parseStringInfo(
-      info.most_severe_consequence,
-      index,
-    );
-    const level_most_severe_consequence = parseStringInfo(
-      info.level_most_severe_consequence,
-      index,
-    );
-    const cadd_raw_rs = parseFloatInfo(info.cadd_raw_rs, index);
-    const cadd_phred = parseFloatInfo(info.cadd_phred, index);
-    const polyphen_pred = parseStringInfo(info.polyphen_pred, index);
-    const polyphen_rankscore = parseFloatInfo(info.polyphen_rankscore, index);
-    const polyphen_score = parseFloatInfo(info.polyphen_score, index);
-    const gerp_score = parseFloatInfo(info.gerp_score, index);
-    const gerp_rankscore = parseFloatInfo(info.gerp_rankscore, index);
-    const sift_rankscore = parseFloatInfo(info.sift_rankscore, index);
-    const sift_pred = parseStringInfo(info.sift_pred, index);
-    const sift_score = parseFloatInfo(info.sift_score, index);
-    const spliceai_score_max = parseFloatInfo(info.spliceai_score_max, index);
-    const fisher_or_gnomADg = parseFloatInfo(info.fisher_or_gnomADg, index);
-    const fisher_ml10p_gnomADg = parseFloatInfo(
-      info.fisher_ml10p_gnomADg,
-      index,
-    );
-    const fisher_or_gnomADe2 = parseFloatInfo(info.fisher_or_gnomADe2, index);
-    const fisher_ml10p_gnomADe2 = parseFloatInfo(
-      info.fisher_ml10p_gnomADe2,
-      index,
-    );
-    const fisher_or_control = parseFloatInfo(info.fisher_or_control, index);
-    const fisher_ml10p_control = parseFloatInfo(
-      info.fisher_ml10p_control,
-      index,
-    );
-    const regenie_ml10p = parseFloatInfo(info.regenie_ml10p, index);
-    const regenie_beta = parseStringInfo(info.regenie_beta, index);
-    const regenie_chisq = parseStringInfo(info.regenie_chisq, index);
-    const regenie_se = parseStringInfo(info.regenie_se, index);
-
-    // If the control AF is not available, we are setting it to 0
-    const deltaAfControl = case_AF - control_AF;
-    const deltaAfGnomad2 = gnomADe2_AF ? case_AF - gnomADe2_AF : case_AF;
-    const deltaAfGnomad3 = gnomADg_AF ? case_AF - gnomADg_AF : case_AF;
-
+    
     const segment = {
       //id: slugid.nice(),
       id: `${chrName}_${vcfRecord.POS}_${vcfRecord.REF}_${alt}`,
@@ -100,54 +62,15 @@ const vcfRecordToJson = (vcfRecord, chrName, multires_chromName, chrOffset) => {
       chrName,
       multiresChrName: multires_chromName,
       chrOffset,
-      case_AC,
-      case_AN,
-      case_AF,
-      control_AC,
-      control_AN,
-      control_AF,
-      gnomADg_AC,
-      gnomADg_AN,
-      gnomADg_AF,
-      gnomADe2_AC,
-      gnomADe2_AN,
-      gnomADe2_AF,
-      most_severe_consequence,
-      level_most_severe_consequence,
-      cadd_raw_rs,
-      cadd_phred,
-      polyphen_pred,
-      polyphen_rankscore,
-      polyphen_score,
-      gerp_score,
-      gerp_rankscore,
-      sift_rankscore,
-      sift_pred,
-      sift_score,
-      spliceai_score_max,
-      fisher_or_gnomADg,
-      fisher_ml10p_gnomADg,
-      fisher_or_gnomADe2,
-      fisher_ml10p_gnomADe2,
-      fisher_or_control,
-      fisher_ml10p_control,
-      regenie_ml10p,
-      regenie_beta,
-      regenie_chisq,
-      regenie_se,
-      transcript,
-      deltaAfAbsControl: Math.abs(deltaAfControl),
-      deltaAfControl,
-      deltaAfAbsGnomad2: Math.abs(deltaAfGnomad2),
-      deltaAfGnomad2: deltaAfGnomad2,
-      deltaAfAbsGnomad3: Math.abs(deltaAfGnomad3),
-      deltaAfGnomad3: deltaAfGnomad3,
-
-      //info: extractColumnFromVcfInfo(info, index),
-      //row: null,
       type: 'variant',
       category: 'SNV',
     };
+
+    trackOptions.infoFields.forEach((infoField) => {
+      const infoFieldName = infoField["name"];
+      const infoFieldType = infoField["type"];
+      segment[infoFieldName] = parseInfoField(info[infoFieldName], index, infoFieldType)
+    });
 
     segments.push(segment);
   });
@@ -171,6 +94,8 @@ const tilesetInfos = {};
 // indexed by uuid
 const dataConfs = {};
 
+let trackOptions = {};
+
 const init = (uid, vcfUrl, tbiUrl, chromSizesUrl, tOptions) => {
   initBase(
     uid,
@@ -182,6 +107,8 @@ const init = (uid, vcfUrl, tbiUrl, chromSizesUrl, tOptions) => {
     chromSizes, // passed and filled by reference
     dataConfs, // passed and filled by reference
   );
+  trackOptions = tOptions;
+  
 };
 
 const tilesetInfo = (uid) => {
@@ -235,7 +162,7 @@ const tile = async (uid, z, x) => {
                 vcfRecord,
                 chromName,
                 multires_chromName,
-                cumPositions[i].pos,
+                cumPositions[i].pos
               );
               vcfJson.forEach((variant) => variants.push(variant));
             }),
@@ -252,7 +179,7 @@ const tile = async (uid, z, x) => {
                 vcfRecord,
                 chromName,
                 multires_chromName,
-                cumPositions[i].pos,
+                cumPositions[i].pos
               );
               vcfJson.forEach((variant) => variants.push(variant));
             }),
@@ -296,12 +223,32 @@ const retrieveSegments = (uid, tileIds, domain, scaleRange, trackOptions) => {
     }
   }
 
-  const segmentList = Object.values(allSegments);
-  const segmentListFiltered = segmentList.filter((segment) =>
-    trackOptions.consequenceLevels.includes(
-      segment.level_most_severe_consequence,
-    ) && segment.cadd_phred >= trackOptions.minCadd && segment.cadd_phred <= trackOptions.maxCadd,
-  );
+  let segmentListFiltered = Object.values(allSegments);
+  trackOptions.filter.forEach((f) => {
+    const field = f["field"];
+    const target = f["target"];
+    if(f["operator"] === "is_one_of"){
+      segmentListFiltered = segmentListFiltered.filter((segment) =>
+        target.includes(segment[field])
+      );
+    }else if(f["operator"] === "has_one_of"){
+      segmentListFiltered = segmentListFiltered.filter((segment) =>{
+        const segmentArr = segment[field];
+        const targetArr = target;
+        const intersection = segmentArr.filter(value => targetArr.includes(value));
+        return intersection.length > 0;
+      });
+    }else if(f["operator"] === "is_between"){
+      segmentListFiltered = segmentListFiltered.filter((segment) =>
+        segment[field] >= target[0] && segment[field] <= target[1]
+      );
+    }
+    else if(f["operator"] === "is_equal"){
+      segmentListFiltered = segmentListFiltered.filter((segment) =>
+        segment[field] === target
+      );
+    }
+  });
 
   const objData = {
     variants: segmentListFiltered,

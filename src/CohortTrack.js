@@ -3,7 +3,8 @@ import MyWorkerWeb from 'raw-loader!../dist/cohort-worker.js';
 import { spawn, BlobWorker } from 'threads';
 import { COLORS } from './vcf-utils';
 import LegendUtils from './legend-utils';
-import VariantDetails from './VariantDetails';
+import VariantDetailsMSA from './VariantDetailsMSA';
+import VariantDetailsUDN from './VariantDetailsUDN';
 import VariantDetailFetcher from './variant-detail-fetcher';
 import { format } from 'd3-format';
 import { scaleLinear, scaleLog } from 'd3-scale';
@@ -19,6 +20,11 @@ import {
   isIn,
   sanitizeMouseOverHtml,
 } from './misc-utils';
+import {
+  getMouseoverHtmlMSA,
+  getMouseoverHtmlUDN,
+  getMouseoverHtmlGeneric,
+} from './mouseover-utils';
 import BaseTrack from './BaseTrack';
 
 //const CohortTrack = (HGC, ...args) => {
@@ -77,10 +83,11 @@ function CohortTrack(HGC, ...args) {
       this.initSubTracks();
 
       this.colorScaleHex = {};
-      this.options.colorScale.forEach((cs) => {
-        this.colorScaleHex[cs['level']] = HGC.utils.colorToHex(cs['color']);
+      this.options.colorScale.scale.forEach((cs) => {
+        this.colorScaleHex[cs['value']] = HGC.utils.colorToHex(cs['color']);
       });
 
+      this.variantDetailFetcher = null;
       if (this.options.variantDetailSource) {
         this.variantDetailFetcher = new VariantDetailFetcher(
           this.options.variantDetailSource,
@@ -106,8 +113,7 @@ function CohortTrack(HGC, ...args) {
       this.pMain.removeChildren();
       this.pMain.clear();
 
-      const mainTrackHeight =
-        this.options.mainDisplay === 'deltaAF' ? 200 : 100;
+      const mainTrackHeight = 100;
       this.subTracks.push({
         legendUtils: new LegendUtils(this.HGC, 70, mainTrackHeight),
         legendGraphics: new this.HGC.libraries.PIXI.Graphics(),
@@ -124,44 +130,6 @@ function CohortTrack(HGC, ...args) {
 
       let curYOffset = mainTrackHeight + 25;
 
-      if (this.options.showAlleleFrequencies) {
-        this.options.consequenceLevels.forEach((cl) => {
-          const height = 30;
-          const padding = 5;
-          this.subTracks.push({
-            legendUtils: new LegendUtils(this.HGC, 50, 50),
-            legendGraphics: new this.HGC.libraries.PIXI.Graphics(),
-            labelGraphics: new this.HGC.libraries.PIXI.Graphics(),
-            infoGraphics: new this.HGC.libraries.PIXI.Graphics(),
-            bgGraphics: new this.HGC.libraries.PIXI.Graphics(),
-            afGraphics: new this.HGC.libraries.PIXI.Graphics(),
-            height: height,
-            yOffset: curYOffset,
-            baseLineLevel: 0,
-            numLabels: 1,
-            id: cl + '_case',
-          });
-
-          curYOffset += height + padding;
-
-          this.subTracks.push({
-            legendUtils: new LegendUtils(this.HGC, 50, 50),
-            legendGraphics: new this.HGC.libraries.PIXI.Graphics(),
-            labelGraphics: new this.HGC.libraries.PIXI.Graphics(),
-            infoGraphics: new this.HGC.libraries.PIXI.Graphics(),
-            bgGraphics: new this.HGC.libraries.PIXI.Graphics(),
-            afGraphics: new this.HGC.libraries.PIXI.Graphics(),
-            height: height,
-            yOffset: curYOffset,
-            baseLineLevel: 0,
-            numLabels: 1,
-            id: cl + '_control',
-          });
-
-          curYOffset += height + padding;
-        });
-      }
-
       this.subTracks.forEach((subTrack) => {
         subTrack.legendGraphics.position.y = subTrack.yOffset;
         subTrack.labelGraphics.position.y = subTrack.yOffset;
@@ -175,27 +143,18 @@ function CohortTrack(HGC, ...args) {
         this.pMain.addChild(subTrack.afGraphics);
       });
 
-      this.pubSub.publish('trackDimensionsModified', {
-        height: curYOffset + 20,
-        resizeParentDiv: true,
-        trackId: this.trackId,
-        viewId: this.viewId,
-      });
+      // this.pubSub.publish('trackDimensionsModified', {
+      //   height: curYOffset + 20,
+      //   resizeParentDiv: true,
+      //   trackId: this.trackId,
+      //   viewId: this.viewId,
+      // });
     }
 
     rerender(options) {
       super.rerender(options);
       this.options = options;
-      const csSetOld = new Set(this.prevOptions.consequenceLevels);
-      const csSetNew = new Set(this.options.consequenceLevels);
-      if (
-        this.options.showAlleleFrequencies !==
-          this.prevOptions.showAlleleFrequencies ||
-        !eqSet(csSetOld, csSetNew)
-      ) {
-        this.initSubTracks();
-      }
-
+      
       this.createLabelGraphics();
       this.updateExistingGraphics();
       this.prevOptions = Object.assign({}, options);
@@ -215,9 +174,9 @@ function CohortTrack(HGC, ...args) {
 
     createLabelGraphics() {
       const colorScaleHex = [];
-      this.options.colorScale.forEach((cs) => {
+      this.options.colorScale.scale.forEach((cs) => {
         colorScaleHex.push({
-          level: cs['level'],
+          level: cs['value'],
           colorHex: HGC.utils.colorToHex(cs['color']),
         });
       });
@@ -228,15 +187,18 @@ function CohortTrack(HGC, ...args) {
           this.dimensions[0],
           subTrack.id,
           colorScaleHex,
-          this.options.consequenceLevels,
+          this.options.colorScaleLegend,
         );
       });
 
-      const mainTrack = this.subTracks[0];
-      mainTrack.legendUtils.drawAxisLabel(
-        mainTrack.labelGraphics,
-        '-log10 (p-value)',
-      );
+      if(this.options["yAxisLabel"] && this.options["yAxisLabel"]["visible"]){
+        const mainTrack = this.subTracks[0];
+        mainTrack.legendUtils.drawAxisLabel(
+          mainTrack.labelGraphics,
+          this.options["yAxisLabel"]["text"],
+        );
+      }
+      
     }
 
     drawHorizontalLines() {
@@ -252,360 +214,44 @@ function CohortTrack(HGC, ...args) {
       });
     }
 
-    // REDUNDANT
-    // createLegendGraphics() {
-    //   const mainTrack = this.subTracks[0];
-    //   mainTrack.legendUtils.resetLegend(mainTrack.legendGraphics);
-    //   if (this.options.mainDisplay === 'deltaAF') {
-    //     mainTrack.legendUtils.createLegend(
-    //       mainTrack.legendGraphics,
-    //       1,
-    //       mainTrack.numLabels,
-    //       0,
-    //       mainTrack.height / 2,
-    //     );
-    //     mainTrack.legendUtils.createLegend(
-    //       mainTrack.legendGraphics,
-    //       1,
-    //       mainTrack.numLabels,
-    //       mainTrack.height / 2,
-    //       mainTrack.height / 2,
-    //       true,
-    //     );
-    //   } else {
-    //     mainTrack.legendUtils.createLegend(
-    //       mainTrack.legendGraphics,
-    //       1,
-    //       mainTrack.numLabels,
-    //       0,
-    //       mainTrack.height,
-    //     );
-    //   }
-    //   mainTrack.legendUtils.setBaseLineLevel(mainTrack.baseLineLevel);
-
-    //   this.subTracks.forEach((subTrack, i) => {
-    //     if (i === 0) {
-    //       return;
-    //     }
-    //     subTrack.legendUtils.resetLegend(subTrack.legendGraphics);
-    //     subTrack.legendUtils.createLegend(
-    //       subTrack.legendGraphics,
-    //       1,
-    //       subTrack.numLabels,
-    //       0,
-    //       subTrack.height,
-    //     );
-    //   });
-
-    //   this.subTracks.forEach((subTrack) => {
-    //     subTrack.legendUtils.drawHorizontalLines(
-    //       subTrack.bgGraphics,
-    //       0,
-    //       this.dimensions[0],
-    //     );
-    //   });
-    // }
-
     updateVariantsInView() {
       this.variantsInView = [];
       this.variantList.forEach((variant) => {
         const xPos = this._xScale(variant.from);
         if (
           xPos > 0 &&
-          xPos < this.dimensions[0] //&&
-          //this.options.consequenceLevels.includes(variant.level_most_severe_consequence)
+          xPos < this.dimensions[0]
         ) {
           this.variantsInView.push(variant);
         }
       });
     }
 
-    drawBarCharts() {
-      if (!this.options.showAlleleFrequencies) {
-        return;
-      }
-      let maxAF = 0;
-      let minAF = 1;
-
-      this.variantsInView.forEach((variant) => {
-        maxAF = Math.max(maxAF, variant.case_AF);
-        minAF = variant.case_AF > 0 ? Math.min(minAF, variant.case_AF) : minAF;
-        if (this.options.controlGroup === 'gnomad2') {
-          maxAF = variant.gnomADe2_AF
-            ? Math.max(maxAF, variant.gnomADe2_AF)
-            : maxAF;
-          minAF =
-            variant.gnomADe2_AF && variant.gnomADe2_AF > 0
-              ? Math.min(minAF, variant.gnomADe2_AF)
-              : minAF;
-        } else if (this.options.controlGroup === 'gnomad3') {
-          maxAF = variant.gnomADg_AF
-            ? Math.max(maxAF, variant.gnomADg_AF)
-            : maxAF;
-          minAF =
-            variant.gnomADg_AF && variant.gnomADg_AF > 0
-              ? Math.min(minAF, variant.gnomADg_AF)
-              : minAF;
-        } else {
-          maxAF = Math.max(maxAF, variant.control_AF);
-          minAF = Math.min(minAF, variant.control_AF);
-        }
-      });
-
-      if (maxAF === 0) {
-        maxAF = 1e-1;
-      } else {
-        const m = -Math.floor(Math.log10(maxAF) + 1) + 1;
-        const mm = 10 ** m;
-        maxAF = Math.ceil(maxAF * mm) / mm;
-      }
-
-      this.subTracks.forEach((subTrack, i) => {
-        if (i === 0) {
-          return;
-        }
-        subTrack.afGraphics.clear();
-        subTrack.legendUtils.resetLegend(subTrack.legendGraphics);
-        subTrack.legendUtils.createLegend(
-          subTrack.legendGraphics,
-          maxAF,
-          subTrack.numLabels,
-          0,
-          subTrack.height,
-        );
-
-        const cll = subTrack.legendUtils.currentLegendLevels;
-        const numLabels = subTrack.legendUtils.numLabels;
-
-        const rangePos = [cll[0], cll[numLabels]];
-
-        // Attach scales that map from value to lollipop height in display
-        const domainFrom = Math.max(minAF / 5, 1e-6);
-        const domainTo = maxAF;
-
-        subTrack['logYScalePos'] = scaleLog()
-          .domain([domainFrom, domainTo])
-          .range([0, rangePos[1] - rangePos[0]]);
-
-        this.variantsInView.forEach((variant) => {
-          if (!subTrack.id.includes(variant.level_most_severe_consequence)) {
-            return;
-          }
-
-          let valueToPlot = variant.case_AF;
-          if (subTrack.id.includes('control')) {
-            if (this.options.controlGroup === 'control') {
-              valueToPlot = variant.control_AF;
-            } else {
-              valueToPlot =
-                this.options.controlGroup === 'gnomad2'
-                  ? variant.gnomADe2_AF
-                  : variant.gnomADg_AF;
-            }
-
-            variant.yRangeRect2 = [
-              cll[0] + subTrack.yOffset,
-              cll[numLabels] + subTrack.yOffset,
-            ]; // mouse over
-          } else {
-            variant.yRangeRect1 = [
-              cll[0] + subTrack.yOffset,
-              cll[numLabels] + subTrack.yOffset,
-            ]; // mouse over
-          }
-
-          if (valueToPlot >= domainFrom) {
-            const xPos = this._xScale(variant.from);
-            const rectWidth = Math.max(
-              this._xScale(variant.from + 1) - xPos,
-              1,
-            );
-            const rectHeight = subTrack.logYScalePos(valueToPlot);
-            const yPos = rangePos[1] - rectHeight + 1;
-            subTrack.afGraphics.beginFill(
-              this.colorScaleHex[variant.level_most_severe_consequence],
-            );
-            subTrack.afGraphics.drawRect(xPos, yPos, rectWidth, rectHeight);
-          } else if (valueToPlot >= 0) {
-            const xPos = this._xScale(variant.from);
-            const rectWidth = Math.max(
-              this._xScale(variant.from + 1) - xPos,
-              1,
-            );
-            const rectHeight = subTrack.logYScalePos(valueToPlot);
-            const yPos = rangePos[1] - rectHeight + 1;
-            subTrack.afGraphics.beginFill(
-              this.colorScaleHex[variant.level_most_severe_consequence],
-            );
-            subTrack.afGraphics.drawRect(xPos, yPos, rectWidth, 1);
-          }
-        });
-      });
-    }
 
     drawLollipops() {
       const mainTrack = this.subTracks[0];
       mainTrack.afGraphics.clear();
-
       this.updateVariantsInView();
-
-      if (this.options.mainDisplay === 'deltaAF') {
-        this.drawLollipopsDeltaAF(mainTrack);
-      } else {
-        this.drawLollipopsFisher(mainTrack);
-      }
+      this.drawLollipopsFisher(mainTrack);
     }
 
-    drawLollipopsDeltaAF(mainTrack) {
-      let maxAF = 0;
-
-      this.variantsInView.forEach((variant) => {
-        if (this.options.controlGroup === 'gnomad2') {
-          maxAF = Math.max(maxAF, variant.deltaAfAbsGnomad2);
-        } else if (this.options.controlGroup === 'gnomad3') {
-          maxAF = Math.max(maxAF, variant.deltaAfAbsGnomad3);
-        } else {
-          maxAF = Math.max(maxAF, variant.deltaAfAbsControl);
-        }
-      });
-      // round to closes decimal for legend
-
-      if (maxAF === 0) {
-        maxAF = 1e-1;
-      } else {
-        const m = -Math.floor(Math.log10(maxAF) + 1) + 1;
-        const mm = 10 ** m;
-        maxAF = Math.ceil(maxAF * mm) / mm;
+    applyValueTransform(value, transform){
+      if(transform && transform === "-log10"){
+        const res = value > 0.0 ? -Math.log10(value) : 0.0;
+        return res;
       }
-
-      //maxAF = parseFloat(maxAF.toExponential(0));
-
-      mainTrack.legendUtils.resetLegend(mainTrack.legendGraphics);
-
-      mainTrack.legendUtils.createLegend(
-        mainTrack.legendGraphics,
-        maxAF,
-        mainTrack.numLabels,
-        0,
-        mainTrack.height / 2,
-      );
-      mainTrack.legendUtils.createLegend(
-        mainTrack.legendGraphics,
-        maxAF,
-        mainTrack.numLabels,
-        mainTrack.height / 2,
-        mainTrack.height / 2,
-        true,
-      );
-
-      //console.log("LegenLevels:", mainTrack.legendUtils.currentLegendLevels);
-      const cll = mainTrack.legendUtils.currentLegendLevels;
-      const numLabels = mainTrack.legendUtils.numLabels;
-
-      const rangePos = [cll[0], cll[numLabels]];
-      const rangePosLargeScale = [cll[0], cll[numLabels - 1]];
-      const rangePosSmallScale = [cll[numLabels - 1], cll[numLabels]];
-
-      const rangeNeg = [cll[numLabels + 1], cll[cll.length - 1]];
-      const rangeNegLargeScale = [cll[numLabels + 2], cll[cll.length - 1]];
-      const rangeNegSmallScale = [cll[numLabels + 1], cll[numLabels + 2]];
-
-      // Attach scales that map from value to lollipop height in display
-      let domainFromLargeScale = maxAF / 10 ** (mainTrack.numLabels - 1);
-      let domainToLargeScale = maxAF;
-      mainTrack.logYScalePosLargeScale = scaleLog()
-        .domain([domainFromLargeScale, domainToLargeScale])
-        .range([rangePosLargeScale[1], rangePosLargeScale[0]]);
-      let domainFromSmallScale = domainFromLargeScale / 1000;
-      let domainToSmallScale = domainFromLargeScale;
-      mainTrack.logYScalePosSmallScale = scaleLog()
-        .domain([domainFromSmallScale, domainToSmallScale])
-        .range([rangePosSmallScale[1], rangePosSmallScale[0]]);
-
-      mainTrack.logYScaleNegLargeScale = scaleLog()
-        .domain([-domainFromLargeScale, -domainToLargeScale])
-        .range([rangeNegLargeScale[0], rangeNegLargeScale[1]]);
-      mainTrack.logYScaleNegSmallScale = scaleLog()
-        .domain([-domainFromSmallScale, -domainToSmallScale])
-        .range([rangeNegSmallScale[0], rangeNegSmallScale[1]]);
-
-      this.variantsInView.forEach((variant) => {
-        const xPos = this._xScale(variant.from + 0.5);
-        let yPos = 0;
-        let deltaAF = variant.deltaAfControl;
-        if (this.options.controlGroup === 'gnomad2') {
-          deltaAF = variant.deltaAfGnomad2;
-        } else if (this.options.controlGroup === 'gnomad3') {
-          deltaAF = variant.deltaAfGnomad3;
-        }
-
-        mainTrack.afGraphics.beginFill(
-          this.colorScaleHex[variant.level_most_severe_consequence],
-        );
-        if (deltaAF >= 0) {
-          yPos = rangePosSmallScale[1];
-          if (deltaAF >= domainFromLargeScale) {
-            yPos = mainTrack.logYScalePosLargeScale(deltaAF);
-          } else if (deltaAF >= domainFromSmallScale) {
-            yPos = mainTrack.logYScalePosSmallScale(deltaAF);
-          } else {
-            yPos = rangePosSmallScale[1]; // corresponds to 0
-          }
-          // used for mouseover
-          variant.xPosLollipop = xPos;
-          variant.yPosLollipop = yPos + mainTrack.yOffset - 2;
-
-          this.drawLollipop(
-            mainTrack.afGraphics,
-            this.colorScaleHex[variant.level_most_severe_consequence],
-            0.5,
-            xPos,
-            mainTrack.baseLineLevel,
-            mainTrack.baseLineLevel - yPos,
-          );
-        } else {
-          yPos = rangeNegSmallScale[0];
-          //console.log(variant.from, variant.deltaAf, -domainFromSmallScale, -domainFromLargeScale)
-          if (deltaAF <= -domainFromLargeScale) {
-            yPos = mainTrack.logYScaleNegLargeScale(deltaAF);
-          } else if (deltaAF <= -domainFromSmallScale) {
-            yPos = mainTrack.logYScaleNegSmallScale(deltaAF);
-          } else {
-            yPos = rangeNegSmallScale[0]; // corresponds to 0
-          }
-
-          // used for mouseover
-          variant.xPosLollipop = xPos;
-          variant.yPosLollipop = yPos + mainTrack.yOffset - 2;
-
-          // We are adding 1 to the baseline to account for the thickness of the zero line
-          this.drawLollipop(
-            mainTrack.afGraphics,
-            this.colorScaleHex[variant.level_most_severe_consequence],
-            0.5,
-            xPos,
-            mainTrack.baseLineLevel + 1,
-            mainTrack.baseLineLevel - yPos,
-          );
-        }
-      });
+      return value;
     }
 
     drawLollipopsFisher(mainTrack) {
       let maxAF = 0;
+      const yValueField = this.options['yValue']['field'];
+      const valueTransform = this.options['yValue']['transform'];
+      const colorField = this.options['colorScale']['field'];
 
       this.variantsInView.forEach((variant) => {
-        if (this.options.controlGroup === 'gnomad2') {
-          if (variant.fisher_ml10p_gnomADe2) {
-            maxAF = Math.max(maxAF, variant.fisher_ml10p_gnomADe2);
-          }
-        } else if (this.options.controlGroup === 'gnomad3') {
-          if (variant.fisher_ml10p_gnomADg) {
-            maxAF = Math.max(maxAF, variant.fisher_ml10p_gnomADg);
-          }
-        } else {
-          maxAF = Math.max(maxAF, variant.fisher_ml10p_control);
-        }
+        const transValue = this.applyValueTransform(variant[yValueField], valueTransform);
+        maxAF = Math.max(maxAF, transValue);
       });
       // round to closes decimal for legend
 
@@ -637,25 +283,12 @@ function CohortTrack(HGC, ...args) {
       this.variantsInView.forEach((variant) => {
         const xPos = this._xScale(variant.from + 0.5);
         let yPos = mainTrack.baseLineLevel;
-        let fisher = -1;
-        if (this.options.controlGroup === 'gnomad2') {
-          if (variant.fisher_ml10p_gnomADe2) {
-            fisher = variant.fisher_ml10p_gnomADe2;
-          }
-        } else if (this.options.controlGroup === 'gnomad3') {
-          if (variant.fisher_ml10p_gnomADg) {
-            fisher = variant.fisher_ml10p_gnomADg;
-          }
-        } else {
-          fisher = variant.fisher_ml10p_control;
-        }
+        let yValue = this.applyValueTransform(variant[yValueField], valueTransform);
 
         mainTrack.afGraphics.beginFill(
-          this.colorScaleHex[variant.level_most_severe_consequence],
+          this.colorScaleHex[variant[colorField]],
         );
-        if (fisher >= 0) {
-          yPos = mainTrack.linearYScalePos(fisher);
-        }
+        yPos = mainTrack.linearYScalePos(yValue);
         // used for mouseover
         variant.xPosLollipop = xPos;
         variant.yPosLollipop = yPos + mainTrack.yOffset - 2;
@@ -670,7 +303,7 @@ function CohortTrack(HGC, ...args) {
         
         this.drawLollipop(
           mainTrack.afGraphics,
-          this.colorScaleHex[variant.level_most_severe_consequence],
+          this.colorScaleHex[variant[colorField]],
           alphaLevel,
           xPos,
           mainTrack.baseLineLevel,
@@ -729,7 +362,6 @@ function CohortTrack(HGC, ...args) {
             this.pMain.x = this.position[0];
 
             this.drawLollipops();
-            this.drawBarCharts();
             this.drawHorizontalLines();
 
             this.clearNotification(this.subTracks[0]);
@@ -764,15 +396,24 @@ function CohortTrack(HGC, ...args) {
         chr: chr,
         pos: pos,
         variantInfo: this.mouseClickData,
-        dataFetcher: this.variantDetailFetcher,
+        dataFetcher: this.variantDetailFetcher || null,
       };
 
       restoreCursor();
-      return {
-        title: `Variant ${chr}:${format(',')(pos)}`,
-        bodyComponent: VariantDetails,
-        bodyProps: props,
-      };
+      if(this.options.project === "MSA"){
+        return {
+          title: `Variant ${chr}:${format(',')(pos)}`,
+          bodyComponent: VariantDetailsMSA,
+          bodyProps: props,
+        };
+      }else if(this.options.project === "UDN"){
+        return {
+          title: `Variant ${chr}:${format(',')(pos)}`,
+          bodyComponent: VariantDetailsUDN,
+          bodyProps: props,
+        };
+      }
+      return "";
     }
 
     getMouseOverHtml(trackX, trackYIn) {
@@ -784,124 +425,35 @@ function CohortTrack(HGC, ...args) {
       const padding = 2;
 
       let filteredList = [];
-      if (this.options.showAlleleFrequencies) {
-        filteredList = this.variantsInView.filter(
-          (variant) =>
-            variant.xPosLollipop - this.lollipopRadius - padding <= trackX &&
-            trackX <= variant.xPosLollipop + this.lollipopRadius + padding &&
-            ((trackY >= variant.yPosLollipop - padding &&
-              trackY <=
-                variant.yPosLollipop + 2 * this.lollipopRadius + padding) ||
-              (trackY >= variant.yRangeRect1[0] &&
-                trackY <= variant.yRangeRect1[1]) ||
-              (trackY >= variant.yRangeRect2[0] &&
-                trackY <= variant.yRangeRect2[1])),
-        );
-      } else {
-        filteredList = this.variantsInView.filter(
-          (variant) =>
-            variant.xPosLollipop - this.lollipopRadius - padding <= trackX &&
-            trackX <= variant.xPosLollipop + this.lollipopRadius + padding &&
-            trackY >= variant.yPosLollipop - padding &&
-            trackY <= variant.yPosLollipop + 2 * this.lollipopRadius + padding,
-        );
+      filteredList = this.variantsInView.filter(
+        (variant) =>
+          variant.xPosLollipop - this.lollipopRadius - padding <= trackX &&
+          trackX <= variant.xPosLollipop + this.lollipopRadius + padding &&
+          trackY >= variant.yPosLollipop - padding &&
+          trackY <= variant.yPosLollipop + 2 * this.lollipopRadius + padding,
+      );
+
+      if(filteredList.length === 0){
+        restoreCursor();
+        this.mouseClickData = null;
+        return '';
       }
 
       let mouseOverHtml = ``;
 
-      for (const variant of filteredList) {
-        let variantHtml = ``;
-        let mostSevereConsequenceHtml = ``;
-        let consequenceLevelHtml = ``;
-        let positionHtml = ``;
-        let alleleCountHtml = ``;
-        let alleleFrequencyHtml = ``;
-        let alleleNumberHtml = ``;
-        const al = 'style="text-align: left !important;"';
-
-        let vRef = variant.ref.match(/.{1,15}/g).join('<br>');
-        let vAlt = variant.alt.match(/.{1,15}/g).join('<br>');
-
-        if (variant.category === 'SNV') {
-          positionHtml += `${variant.chrName}:${format(',')(
-            variant.from - variant.chrOffset,
-          )}`;
-          mostSevereConsequenceHtml += `Most severe consequence: <strong>${variant.most_severe_consequence}</strong>`;
-          consequenceLevelHtml += `Consequence level: <strong>${capitalizeFirstLetter(
-            variant.level_most_severe_consequence.toLowerCase(),
-          )}</strong>`;
-
-          let fisher_p = variant.fisher_ml10p_control;
-          if (this.options.controlGroup === 'gnomad2') {
-            fisher_p = variant.fisher_ml10p_gnomADe2;
-          } else if (this.options.controlGroup === 'gnomad3') {
-            fisher_p = variant.fisher_ml10p_gnomADg;
-          }
-          const fisherHtml = `Fisher test p-value (-log10): <strong>${fisher_p}</strong>`;
-
-          // let fisher_odds = variant.fisher_or_control;
-          // if(this.options.controlGroup === 'gnomad2'){
-          //   fisher_odds = variant.fisher_or_gnomADe2;
-          // }else if (this.options.controlGroup === 'gnomad3'){
-          //   fisher_odds = variant.fisher_or_gnomADg;
-          // }
-          //const fisherORHtml = `Fisher test odds ratio: <strong>${fisher_odds}</strong>`;
-          variantHtml += `<td colspan='4' style="background-color:#ececec;text-align: left !important;">
-              ${mostSevereConsequenceHtml} <br/>
-              ${consequenceLevelHtml} <br/>
-              ${fisherHtml}
-            </td>`;
-        }
-
-        // const acGnomad2 = variant.gnomADe2_AC ? variant.gnomADe2_AC : '-';
-        // const acGnomad3 = variant.gnomADg_AC ? variant.gnomADg_AC : '-';
-        // alleleCountHtml += `<td ${al}>${variant.case_AC}</td><td ${al}>${acGnomad2}</td><td ${al}>${acGnomad3}</td>`;
-        // const afCases =
-        //   variant.case_AF > 0 ? variant.case_AF.toExponential(2) : 0;
-        // let afGnomad2 = '-';
-        // if (variant.gnomADe2_AF) {
-        //   afGnomad2 =
-        //     variant.gnomADe2_AF > 0 ? variant.gnomADe2_AF.toExponential(2) : 0;
-        // }
-        // let afGnomad3 = '-';
-        // if (variant.gnomADg_AF) {
-        //   afGnomad3 =
-        //     variant.gnomADg_AF > 0 ? variant.gnomADg_AF.toExponential(2) : 0;
-        // }
-        // alleleFrequencyHtml += `<td ${al}>${afCases}&nbsp</td><td ${al}>${afGnomad2}&nbsp</td><td ${al}>${afGnomad3}&nbsp</td>`;
-
-        // const anGnomad2 = variant.gnomADe2_AN ? variant.gnomADe2_AN : '-';
-        // const anGnomad3 = variant.gnomADg_AN ? variant.gnomADg_AN : '-';
-        // alleleNumberHtml += `<td ${al}>${variant.case_AN}&nbsp</td><td ${al}>${anGnomad2}&nbsp</td><td ${al}>${anGnomad3}&nbsp</td>`;
-
-        const borderCss = 'border: 1px solid #333333;';
-        mouseOverHtml +=
-          `<table style="margin-top:3px;${borderCss}">` +
-          `<tr style="background-color:#ececec;margin-top:3px;${borderCss}"><td colspan='4' style="text-align: left !important;">
-          Variant: <strong>${vRef} &rarr; ${vAlt}</strong> (${positionHtml})</td></tr>` +
-          `<tr style="margin-top:3px;${borderCss}">${variantHtml}</tr>` +
-          `<tr style="margin-top:3px;${borderCss}"><td colspan='4' style="text-align: left !important; font-size: 11px">
-          <i>Click to see more information.</i></td></tr>` +
-          `</table>`;
-        // mouseOverHtml +=
-        //   `<table style="margin-top:3px;${borderCss}">` +
-        //   `<tr style="background-color:#ececec;margin-top:3px;${borderCss}">${variantHtml}</tr>` +
-        //   `<tr><td ${al}></td><td ${al}>Cases</td><td ${al}>gnomAD v2&nbsp</td><td ${al}>gnomAD v3&nbsp</td></tr>` +
-        //   `<tr><td ${al}>Allele Frequency:</td>${alleleFrequencyHtml}</tr>` +
-        //   `<tr><td ${al}>Allele Count:</td>${alleleCountHtml}</tr>` +
-        //   `<tr><td ${al}>Allele Number:</td>${alleleNumberHtml}</tr>` +
-        //   `</table>`;
-      }
-
-      if (filteredList.length > 0) {
+      if(this.options.project === "MSA"){
+        mouseOverHtml = getMouseoverHtmlMSA(filteredList, this.options);
         setCursor('pointer');
         this.mouseClickData = filteredList[0];
-        return sanitizeMouseOverHtml(mouseOverHtml);
+      }else if(this.options.project === "UDN"){
+        mouseOverHtml = getMouseoverHtmlUDN(filteredList, this.options);
+        setCursor('pointer');
+        this.mouseClickData = filteredList[0];
+      }else{
+        mouseOverHtml = getMouseoverHtmlGeneric(filteredList, this.options);
       }
 
-      restoreCursor();
-      this.mouseClickData = null;
-      return '';
+      return sanitizeMouseOverHtml(mouseOverHtml);
     }
 
     geneSegmentHoveredHandler(settings) {
@@ -915,10 +467,7 @@ function CohortTrack(HGC, ...args) {
 
     zoomed(newXScale, newYScale) {
       super.zoomed(newXScale, newYScale);
-
       this.drawLollipops();
-      this.drawBarCharts();
-
       this.mouseOverGraphics.clear();
       this.animate();
     }
@@ -938,76 +487,29 @@ CohortTrack.config = {
   thumbnail: new DOMParser().parseFromString(icon, 'text/xml').documentElement,
   availableOptions: [
     'colorScale',
-    'showAlleleFrequencies',
+    'colorScaleLegend',
     'showMousePosition',
     'variantHeight',
-    'controlGroup',
-    'mainDisplay',
     'variantDetailSource',
-    'consequenceLevels',
-    'minCadd',
-    'maxCadd',
+    'colorScaleLegend',
+    'infoFields',
+    'filter',
+    'yAxisLabel',
+    'project'
     // 'minZoom'
   ],
   defaultOptions: {
-    colorScale: [
-      {
-        level: 'HIGH',
-        color: '#ff0000',
-      },
-      {
-        level: 'MODERATE',
-        color: '#bf9c00',
-      },
-      {
-        level: 'LOW',
-        color: '#51abf5',
-      },
-      {
-        level: 'MODIFIER',
-        color: '#db4dff',
-      },
-    ],
-    showAlleleFrequencies: false,
     showMousePosition: false,
     variantHeight: 12,
-    controlGroup: 'gnomad2',
-    mainDisplay: 'fisher', // 'fisher', 'deltaAF'
-    consequenceLevels: ['HIGH', 'MODERATE', 'LOW', 'MODIFIER'],
-    minCadd: 0,
-    maxCadd: 200,
+    infoFields: [],
+    filter: [],
+    yAxisLabel: {
+      "visible": true,
+      "text": "-log10 (p-value)",
+    },
+    project: "MSA",
   },
   optionsInfo: {
-    consequenceLevels: {
-      name: 'Visible consequence levels',
-      inlineOptions: {
-        hm: {
-          value: ['HIGH', 'MODERATE'],
-          name: 'High, Moderate',
-        },
-        hml: {
-          value: ['HIGH', 'MODERATE', 'LOW'],
-          name: 'High, Moderate, Low',
-        },
-        hmlm: {
-          value: ['HIGH', 'MODERATE', 'LOW', 'MODIFIER'],
-          name: 'High, Moderate, Low, Modifier',
-        },
-      },
-    },
-    showAlleleFrequencies: {
-      name: 'Show allele frequencies',
-      inlineOptions: {
-        yes: {
-          value: true,
-          name: 'Yes',
-        },
-        no: {
-          value: false,
-          name: 'No',
-        },
-      },
-    },
   },
 };
 
