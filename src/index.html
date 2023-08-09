@@ -33,7 +33,7 @@
 <body>
   <div id="demo"></div>
 </body>
-<script crossorigin src="https://unpkg.com/higlass-bigwig-datafetcher/dist/higlass-bigwig-datafetcher.min.js"></script>
+<!-- <script crossorigin src="https://unpkg.com/higlass-bigwig-datafetcher/dist/higlass-bigwig-datafetcher.min.js"></script> -->
 <script crossorigin src="https://unpkg.com/higlass-sequence/dist/higlass-sequence.js"></script>
 <script crossorigin src="https://unpkg.com/higlass-transcripts/dist/higlass-transcripts.js"></script>
 <script crossorigin src="https://unpkg.com/higlass-text/dist/higlass-text.js"></script>
@@ -43,7 +43,15 @@
 <link rel="stylesheet" href="https://unpkg.com/higlass@1.12.2/dist/hglib.css">
 <!-- <link rel="stylesheet" href="https://aveit-tibanna-wolf.s3.amazonaws.com/higlass/hglib.develop.css">
 <script crossorigin src="https://aveit-tibanna-wolf.s3.amazonaws.com/higlass/hglib.develop.min.js"></script> -->
-<script>
+<script crossorigin src="https://unpkg.com/higlass-register@0.3.0/dist/higlass-register.min.js"></script>
+<script type="module">
+  import { BigwigDataFetcher } from 'https://unpkg.com/higlass-bigwig-datafetcher@0.2.0/dist/index.js';
+  const register = window['higlass-register'].default;
+  register(
+    { dataFetcher: BigwigDataFetcher, config: BigwigDataFetcher.config },
+    { pluginType: "dataFetcher" }
+  );
+
 const testViewConfig =
 {
   "editable": true,
@@ -268,8 +276,8 @@ const testViewConfig =
             "uid": "FylkvVBTSumyJ959HT3-5B",
             "data": {
               "type": "vcf",
-              "vcfUrl": "https://aveit-msa.s3.amazonaws.com/20230406/gene_results.vcf.gz",
-              "tbiUrl": "https://aveit-msa.s3.amazonaws.com/20230406/gene_results.vcf.gz.tbi",
+              "vcfUrl": "https://cgap-training-main-application-cgap-training-wfoutput.s3.amazonaws.com/0fca9e00-4887-4fc3-8310-3328804fab6d/GAPFI81RUNG8.vcf.gz",
+              "tbiUrl": "https://cgap-training-main-application-cgap-training-wfoutput.s3.amazonaws.com/0fca9e00-4887-4fc3-8310-3328804fab6d/GAPFI81RUNG8.vcf.gz.tbi",
               // "vcfUrl": "https://aveit-tibanna-wolf.s3.amazonaws.com/data/GAPFIXW3QIT5_gene_res.vcf.gz",
               // "tbiUrl": "https://aveit-tibanna-wolf.s3.amazonaws.com/data/GAPFIXW3QIT5_gene_res.vcf.gz.tbi",
               "chromSizesUrl": "https://aveit.s3.amazonaws.com/higlass/data/sequence/hg38.mod.chrom.sizes",
@@ -307,10 +315,10 @@ const testViewConfig =
               "controlGroup": "control",
               //"mainDisplay": 'deltaAF',
               "mainDisplay": 'fisher',
-              "variantDetailSource": {
-                "vcfUrl": "https://aveit-msa.s3.amazonaws.com/20230406/variant_details.vcf.gz",
-                "tbiUrl": "https://aveit-msa.s3.amazonaws.com/20230406/variant_details.vcf.gz.tbi",
-              },
+              // "variantDetailSource": {
+              //   "vcfUrl": "https://aveit-msa.s3.amazonaws.com/20230406/variant_details.vcf.gz",
+              //   "tbiUrl": "https://aveit-msa.s3.amazonaws.com/20230406/variant_details.vcf.gz.tbi",
+              // },
               "colorScale": [
                 {
                   "level": 'HIGH',
@@ -329,15 +337,15 @@ const testViewConfig =
                   "color": '#db4dff',
                 },
               ],
-              "consequenceLevels": ['HIGH', 'MODERATE', 'LOW', 'MODIFIER'],
+              "consequenceLevels": ['HIGH', 'MODERATE'],
               "showAlleleFrequencies": false
             },
             "height": 415,
             "uid": "FylkvVBTSumoJ959HT4-5B",
             "data": {
               "type": "vcf",
-              "vcfUrl": "https://aveit-msa.s3.amazonaws.com/20230406/variant_results.vcf.gz",
-              "tbiUrl": "https://aveit-msa.s3.amazonaws.com/20230406/variant_results.vcf.gz.tbi",
+              "vcfUrl": "https://cgap-training-main-application-cgap-training-wfoutput.s3.amazonaws.com/933049a0-429b-4d73-ad88-542ec120818c/GAPFIZ1Z3ZM2.vcf.gz",
+              "tbiUrl": "https://cgap-training-main-application-cgap-training-wfoutput.s3.amazonaws.com/933049a0-429b-4d73-ad88-542ec120818c/GAPFIZ1Z3ZM2.vcf.gz.tbi",
               "chromSizesUrl": "https://aveit.s3.amazonaws.com/higlass/data/sequence/hg38.mod.chrom.sizes",
             },
             "width": 450
@@ -369,7 +377,7 @@ const testViewConfig =
           {
             "data": {
               "type": "bbi",
-              "url": "https://aveit-msa.s3.amazonaws.com/20230406/coverage.bw",
+              "url": "https://cgap-training-main-application-cgap-training-wfoutput.s3.amazonaws.com/227b87ce-a6e6-43a7-a5f9-08bf9ec1f8f4/GAPFIKO5PAH4.vcf.gz",
               "chromSizesUrl": "https://aveit.s3.amazonaws.com/higlass/data/sequence/hg38.chrom.sizes",
             },
             "uid": "bw",
