@@ -69,7 +69,7 @@ class GeneDetailsMSA extends React.Component {
       });
       snpList.push(<tr>{row}</tr>);
     });
-    console.log(snps);
+    //console.log(snps);
 
     return(
     <div>

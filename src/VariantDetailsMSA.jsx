@@ -16,9 +16,13 @@ class VariantDetailsMSA extends React.Component {
       loading: true,
       variantNotFound: false,
       affectedIndividuals: null,
+      dataFetcherFound: this.dataFetcher ? true : false
     };
 
-    this.loadData();
+    if(this.dataFetcher){
+      this.loadData();
+    }
+    
   }
 
   loadData() {
@@ -44,9 +48,11 @@ class VariantDetailsMSA extends React.Component {
   render() {
     
     let sampleInfoTable = <div></div>;
-    if(!this.dataFetcher){
-      sampleInfoTable = <div></div>;;
-    } else if (this.state.loading) {
+    if(!this.state.dataFetcherFound){
+      sampleInfoTable = (
+        <div className="mt-2"><i>Sample level information is not available</i></div>
+      );
+    }else if (this.state.loading) {
       sampleInfoTable = <div className="text-center">Loading...</div>;
     } else if (this.state.variantNotFound) {
       sampleInfoTable = (
