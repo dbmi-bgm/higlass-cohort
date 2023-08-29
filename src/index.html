@@ -267,23 +267,187 @@ const testViewConfig =
             "height": 10,
             "options": {}
           },
+
+          // MSA
           // {
           //   "type": "geneList",
           //   "options": {
           //     //"includedGenes": ['ENSG00000186092','ENSG00000188976','ENSG00000131584']
+          //     "infoFields":[
+          //       {
+          //         "name": "END",
+          //         "type": "int"
+          //       },
+          //       {
+          //         "name": "SYMBOL",
+          //         "type": "string"
+          //       },
+          //       {
+          //         "name": "MASK_MISSENSE_BURDEN",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_MISSENSE_SKAT",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_MISSENSE_SKATO",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_MISSENSE_ACATV",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_MISSENSE_ACATO",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_CADD_BURDEN",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_CADD_SKAT",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_CADD_SKATO",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_CADD_ACATV",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_CADD_ACATO",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_MISSENSE_CADD_BURDEN",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_MISSENSE_CADD_SKAT",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_MISSENSE_CADD_SKATO",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_MISSENSE_CADD_ACATV",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_MISSENSE_CADD_ACATO",
+          //         "type": "float"
+          //       },
+
+          //       {
+          //         "name": "MASK_NONSENSE_SPLICE_BURDEN",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_NONSENSE_SPLICE_SKAT",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_NONSENSE_SPLICE_SKATO",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_NONSENSE_SPLICE_ACATV",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_NONSENSE_SPLICE_ACATO",
+          //         "type": "float"
+          //       },
+                
+          //     ],
+          //     "availableStatistics": ['BURDEN', 'SKAT', 'SKATO', 'ACATV', 'ACATO'],
+          //     "activeStatistic": 'BURDEN',
+          //     "availableMasks": [
+          //       'MASK_MISSENSE',
+          //       'MASK_CADD',
+          //       'MASK_MISSENSE_CADD',
+          //       'MASK_NONSENSE_SPLICE',
+          //     ],
+          //     "activeMask": 'MASK_CADD',
+          //     "yValue": {
+          //       "field": "MASK_CADD_BURDEN",
+          //     },
+          //     "project": "MSA",
           //   },
           //   "height": 120,
           //   "uid": "FylkvVBTSumyJ959HT3-5B",
           //   "data": {
           //     "type": "vcf",
-          //     "vcfUrl": "https://aveit-msa.s3.amazonaws.com/20230406/gene_results.vcf.gz",
-          //     "tbiUrl": "https://aveit-msa.s3.amazonaws.com/20230406/gene_results.vcf.gz.tbi",
-          //     // "vcfUrl": "https://aveit-tibanna-wolf.s3.amazonaws.com/data/GAPFIXW3QIT5_gene_res.vcf.gz",
-          //     // "tbiUrl": "https://aveit-tibanna-wolf.s3.amazonaws.com/data/GAPFIXW3QIT5_gene_res.vcf.gz.tbi",
+          //     "vcfUrl": "genes.vcf.gz",
+          //     "tbiUrl": "genes.vcf.gz.tbi",
           //     "chromSizesUrl": "https://aveit.s3.amazonaws.com/higlass/data/sequence/hg38.mod.chrom.sizes",
           //   },
           //   "width": 450
           // },
+
+          // UDN
+          {
+            "type": "geneList",
+            "options": {
+              //"includedGenes": ['ENSG00000186092','ENSG00000188976','ENSG00000131584']
+              "infoFields":[
+                {
+                  "name": "END",
+                  "type": "int"
+                },
+                {
+                  "name": "SYMBOL",
+                  "type": "string"
+                },
+                {
+                  "name": "go_terms",
+                  "type": "string_list"
+                },
+                {
+                  "name": "kegg_category",
+                  "type": "string_list"
+                },
+                {
+                  "name": "DeNovoWEST_pvalue",
+                  "type": "float"
+                },
+                {
+                  "name": "biallelic_pvalue",
+                  "type": "float"
+                },
+              ],
+              "yValue": {
+                "field": "DeNovoWEST_pvalue",
+              },
+              "significanceTreshold": 1.3,
+              "yAxisLabel": {
+                "visible": true,
+                "text": "DeNovoWEST p",
+              },
+              // "filter": [
+              //   {
+              //     "field": "kegg_category",
+              //     "operator": "has_one_of",
+              //     "target": ["signal_transduction"]
+              //   }
+              // ],
+              "project": "UDN",
+            },
+            "height": 120,
+            "uid": "FylkvVBTSumyJ959HT3-5B",
+            "data": {
+              "type": "vcf",
+              "vcfUrl": "genes.vcf.gz",
+              "tbiUrl": "genes.vcf.gz.tbi",
+              "chromSizesUrl": "https://aveit.s3.amazonaws.com/higlass/data/sequence/hg38.mod.chrom.sizes",
+            },
+            "width": 450
+          },
           
           {
             "uid": "texttrack_cohort",
@@ -532,9 +696,9 @@ const testViewConfig =
           "type": "cohort",
             "options": {
               "variantDetailSource": {
-                "vcfUrl": "udn.samples.vcf.gz",
-                "tbiUrl": "udn.samples.vcf.gz.tbi",
-              },
+                  "vcfUrl": "samples.vcf.gz",
+                  "tbiUrl": "samples.vcf.gz.tbi"
+                },
               "infoFields":[
                 {
                   "name": "transcript",
@@ -690,8 +854,8 @@ const testViewConfig =
             "uid": "FylkvVBTSumoJ959HT4-5B",
             "data": {
               "type": "vcf",
-              "vcfUrl": "udn.variants.20230726.multires.vcf.gz",
-              "tbiUrl": "udn.variants.20230726.multires.vcf.gz.tbi",
+              "vcfUrl": "variants.vcf.gz",
+              "tbiUrl": "variants.vcf.gz.tbi",
               "chromSizesUrl": "https://aveit.s3.amazonaws.com/higlass/data/sequence/hg38.mod.chrom.sizes",
             },
             "width": 450

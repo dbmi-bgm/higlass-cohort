@@ -25,6 +25,7 @@ import {
   getMouseoverHtmlUDN,
   getMouseoverHtmlGeneric,
 } from './mouseover-utils';
+import { applyValueTransform } from './vcf-utils';
 import BaseTrack from './BaseTrack';
 
 //const CohortTrack = (HGC, ...args) => {
@@ -235,14 +236,6 @@ function CohortTrack(HGC, ...args) {
       this.drawLollipopsFisher(mainTrack);
     }
 
-    applyValueTransform(value, transform){
-      if(transform && transform === "-log10"){
-        const res = value > 0.0 ? -Math.log10(value) : 0.0;
-        return res;
-      }
-      return value;
-    }
-
     drawLollipopsFisher(mainTrack) {
       let maxAF = 0;
       const yValueField = this.options['yValue']['field'];
@@ -250,7 +243,7 @@ function CohortTrack(HGC, ...args) {
       const colorField = this.options['colorScale']['field'];
 
       this.variantsInView.forEach((variant) => {
-        const transValue = this.applyValueTransform(variant[yValueField], valueTransform);
+        const transValue = applyValueTransform(variant[yValueField], valueTransform);
         maxAF = Math.max(maxAF, transValue);
       });
       // round to closes decimal for legend
@@ -283,7 +276,7 @@ function CohortTrack(HGC, ...args) {
       this.variantsInView.forEach((variant) => {
         const xPos = this._xScale(variant.from + 0.5);
         let yPos = mainTrack.baseLineLevel;
-        let yValue = this.applyValueTransform(variant[yValueField], valueTransform);
+        let yValue = applyValueTransform(variant[yValueField], valueTransform);
 
         mainTrack.afGraphics.beginFill(
           this.colorScaleHex[variant[colorField]],

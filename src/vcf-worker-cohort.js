@@ -7,40 +7,12 @@ import {
   initBase,
 } from './tileset-utils';
 
+import { parseInfoField } from './vcf-utils';
+import { applySegmentFilter } from './vcf-worker-utils';
+
 function currTime() {
   const d = new Date();
   return d.getTime();
-}
-
-function parseIntInfo(infoProp, index) {
-  let infoVal = infoProp ? parseInt(infoProp[index], 10) : null;
-  return !isNaN(infoVal) ? infoVal : null;
-}
-
-function parseFloatInfo(infoProp, index) {
-  let infoVal = infoProp ? parseFloat(infoProp[index]) : null;
-  return !isNaN(infoVal) ? infoVal : null;
-}
-
-function parseStringInfo(infoProp, index) {
-  return infoProp ? infoProp[index] : '';
-}
-
-function parseStringListInfo(infoProp, index) {
-  return infoProp ? infoProp[index].split('|') : [];
-}
-
-function parseInfoField(infoProp, index, infoFieldType){
-  if(infoFieldType === "string"){
-    return parseStringInfo(infoProp, index);
-  }else if(infoFieldType === "string_list"){
-    return parseStringListInfo(infoProp, index);
-  }else if(infoFieldType === "int"){
-    return parseIntInfo(infoProp, index);
-  }else if(infoFieldType === "float"){
-    return parseFloatInfo(infoProp, index);
-  }
-  return "";
 }
 
 const vcfRecordToJson = (vcfRecord, chrName, multires_chromName, chrOffset) => {
@@ -51,7 +23,6 @@ const vcfRecordToJson = (vcfRecord, chrName, multires_chromName, chrOffset) => {
 
   // VCF records can have multiple ALT. We create a segment for each of them
   vcfRecord['ALT'].forEach((alt, index) => {
-    
     const segment = {
       //id: slugid.nice(),
       id: `${chrName}_${vcfRecord.POS}_${vcfRecord.REF}_${alt}`,
@@ -67,9 +38,13 @@ const vcfRecordToJson = (vcfRecord, chrName, multires_chromName, chrOffset) => {
     };
 
     trackOptions.infoFields.forEach((infoField) => {
-      const infoFieldName = infoField["name"];
-      const infoFieldType = infoField["type"];
-      segment[infoFieldName] = parseInfoField(info[infoFieldName], index, infoFieldType)
+      const infoFieldName = infoField['name'];
+      const infoFieldType = infoField['type'];
+      segment[infoFieldName] = parseInfoField(
+        info[infoFieldName],
+        index,
+        infoFieldType,
+      );
     });
 
     segments.push(segment);
@@ -108,7 +83,6 @@ const init = (uid, vcfUrl, tbiUrl, chromSizesUrl, tOptions) => {
     dataConfs, // passed and filled by reference
   );
   trackOptions = tOptions;
-  
 };
 
 const tilesetInfo = (uid) => {
@@ -162,7 +136,7 @@ const tile = async (uid, z, x) => {
                 vcfRecord,
                 chromName,
                 multires_chromName,
-                cumPositions[i].pos
+                cumPositions[i].pos,
               );
               vcfJson.forEach((variant) => variants.push(variant));
             }),
@@ -179,7 +153,7 @@ const tile = async (uid, z, x) => {
                 vcfRecord,
                 chromName,
                 multires_chromName,
-                cumPositions[i].pos
+                cumPositions[i].pos,
               );
               vcfJson.forEach((variant) => variants.push(variant));
             }),
@@ -224,31 +198,33 @@ const retrieveSegments = (uid, tileIds, domain, scaleRange, trackOptions) => {
   }
 
   let segmentListFiltered = Object.values(allSegments);
-  trackOptions.filter.forEach((f) => {
-    const field = f["field"];
-    const target = f["target"];
-    if(f["operator"] === "is_one_of"){
-      segmentListFiltered = segmentListFiltered.filter((segment) =>
-        target.includes(segment[field])
-      );
-    }else if(f["operator"] === "has_one_of"){
-      segmentListFiltered = segmentListFiltered.filter((segment) =>{
-        const segmentArr = segment[field];
-        const targetArr = target;
-        const intersection = segmentArr.filter(value => targetArr.includes(value));
-        return intersection.length > 0;
-      });
-    }else if(f["operator"] === "is_between"){
-      segmentListFiltered = segmentListFiltered.filter((segment) =>
-        segment[field] >= target[0] && segment[field] <= target[1]
-      );
-    }
-    else if(f["operator"] === "is_equal"){
-      segmentListFiltered = segmentListFiltered.filter((segment) =>
-        segment[field] === target
-      );
-    }
-  });
+  segmentListFiltered = applySegmentFilter(segmentListFiltered, trackOptions);
+  // trackOptions.filter.forEach((f) => {
+  //   const field = f['field'];
+  //   const target = f['target'];
+  //   if (f['operator'] === 'is_one_of') {
+  //     segmentListFiltered = segmentListFiltered.filter((segment) =>
+  //       target.includes(segment[field]),
+  //     );
+  //   } else if (f['operator'] === 'has_one_of') {
+  //     segmentListFiltered = segmentListFiltered.filter((segment) => {
+  //       const segmentArr = segment[field];
+  //       const targetArr = target;
+  //       const intersection = segmentArr.filter((value) =>
+  //         targetArr.includes(value),
+  //       );
+  //       return intersection.length > 0;
+  //     });
+  //   } else if (f['operator'] === 'is_between') {
+  //     segmentListFiltered = segmentListFiltered.filter(
+  //       (segment) => segment[field] >= target[0] && segment[field] <= target[1],
+  //     );
+  //   } else if (f['operator'] === 'is_equal') {
+  //     segmentListFiltered = segmentListFiltered.filter(
+  //       (segment) => segment[field] === target,
+  //     );
+  //   }
+  // });
 
   const objData = {
     variants: segmentListFiltered,
