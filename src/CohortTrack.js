@@ -8,16 +8,12 @@ import VariantDetailsUDN from './VariantDetailsUDN';
 import VariantDetailFetcher from './variant-detail-fetcher';
 import { format } from 'd3-format';
 import { scaleLinear, scaleLog } from 'd3-scale';
+import { SUPPORTED_PROJECTS } from './config';
 import {
   setCursor,
   restoreCursor,
-  capitalizeFirstLetter,
-  scaleScalableGraphics,
-  getTilePosAndDimensions,
   invY,
   eqSet,
-  all,
-  isIn,
   sanitizeMouseOverHtml,
 } from './misc-utils';
 import {
@@ -500,7 +496,6 @@ CohortTrack.config = {
       "visible": true,
       "text": "-log10 (p-value)",
     },
-    project: "MSA",
   },
   optionsInfo: {
   },

@@ -7,6 +7,7 @@ import GeneDetailsMSA from './GeneDetailsMSA';
 import GeneDetailsUDN from './GeneDetailsUDN';
 import { format } from 'd3-format';
 import { scaleLinear, scaleLog } from 'd3-scale';
+import {SUPPORTED_PROJECTS} from './config';
 import {
   setCursor,
   restoreCursor,
@@ -18,7 +19,7 @@ import {
 } from './misc-utils';
 import BaseTrack from './BaseTrack';
 
-//const GeneListTrack = (HGC, ...args) => {
+
 function GeneListTrack(HGC, ...args) {
   class GeneListTrackClass extends BaseTrack(HGC, ...args) {
     constructor(context, options) {
@@ -70,10 +71,7 @@ function GeneListTrack(HGC, ...args) {
       this.setUpShaderAndTextures();
 
       this.prevOptions = Object.assign({}, options);
-
     }
-
-    
 
     initTrack() {
       this.pForeground.removeChildren();
@@ -178,10 +176,10 @@ varying vec4 vColor;
         true,
       );
 
-      if(this.options["yAxisLabel"] && this.options["yAxisLabel"]["visible"]){
+      if (this.options['yAxisLabel'] && this.options['yAxisLabel']['visible']) {
         this.legendUtils.drawAxisLabel(
           this.legendGraphics,
-          this.options["yAxisLabel"]["text"],
+          this.options['yAxisLabel']['text'],
         );
       }
 
@@ -287,8 +285,10 @@ varying vec4 vColor;
     clickDialog() {
       if (!this.mouseClickData) return;
 
+      if (!SUPPORTED_PROJECTS.includes(this.options.project)) return;
+
       this.pubSub.publish('geneSegmentHovered', {
-        includedSnps: "",
+        includedSnps: '',
       });
 
       const geneName = this.mouseClickData.geneName;
@@ -302,7 +302,8 @@ varying vec4 vColor;
       restoreCursor();
       return {
         title: `Gene: ${geneName} (${geneId})`,
-        bodyComponent: this.options.project === "MSA" ? GeneDetailsMSA : GeneDetailsUDN,
+        bodyComponent:
+          this.options.project === 'MSA' ? GeneDetailsMSA : GeneDetailsUDN,
         bodyProps: props,
       };
     }
@@ -326,7 +327,7 @@ varying vec4 vColor;
         restoreCursor();
         this.mouseClickData = null;
         this.pubSub.publish('geneSegmentHovered', {
-          includedSnps: "",
+          includedSnps: '',
         });
         return;
       }
@@ -341,13 +342,13 @@ varying vec4 vColor;
         // this.options.availableStatistics.forEach(stat => {
         //   statHtml += `<tr><td ${al}>${stat}</td><td ${al}>${segment[stat]}</td></tr>`;
         // });
-        if(this.options.activeMask){
+        if (this.options.activeMask) {
           infoHtml += `<tr><td ${al}>Selected mask:</td><td ${al}>${this.options.activeMask}</td></tr>`;
         }
-        if(this.options.activeStatistic){
+        if (this.options.activeStatistic) {
           infoHtml += `<tr><td ${al}>Selected association test:</td><td ${al}>${this.options.activeStatistic}</td></tr>`;
         }
-        
+
         const p_value = format('.4f')(segment[this.options.yValue.field]);
         infoHtml += `<tr><td ${al}>p-value (-log10)</td><td ${al}>${p_value}</td></tr>`;
 
@@ -369,14 +370,16 @@ varying vec4 vColor;
           `</table>`;
       }
 
-      const activeSegment = filteredList[0];
-      const includedSnps = activeSegment[`${this.options.activeMask}_SNPS`];
-      this.pubSub.publish('geneSegmentHovered', {
-        includedSnps: includedSnps || [],
-      });
-
-      setCursor('pointer');
-      this.mouseClickData = activeSegment;
+      if (SUPPORTED_PROJECTS.includes(this.options.project)){
+        const activeSegment = filteredList[0];
+        const includedSnps = activeSegment[`${this.options.activeMask}_SNPS`];
+        this.pubSub.publish('geneSegmentHovered', {
+          includedSnps: includedSnps || [],
+        });
+        if (this.options.project) setCursor('pointer');
+        this.mouseClickData = activeSegment;
+      }
+      
       return sanitizeMouseOverHtml(mouseOverHtml);
     }
 
@@ -428,12 +431,11 @@ GeneListTrack.config = {
     segmentHeight: 12,
     infoFields: [],
     filter: [],
-    significanceTreshold:  1.3010,// -log10(0.05)
+    significanceTreshold: 1.301, // -log10(0.05)
     yAxisLabel: {
-      "visible": true,
-      "text": "-log10 (p-value)",
+      visible: true,
+      text: '-log10 (p-value)',
     },
-    project: "MSA"
   },
   optionsInfo: {},
 };

@@ -94,7 +94,36 @@ export const getMouseoverHtmlUDN = (variants, trackOptions) => {
 }
 
 export const getMouseoverHtmlGeneric = (variants, trackOptions) => {
-  return "";
+  let mouseOverHtml = ``;
+  for (const variant of variants) {
+    let variantHtml = ``;
+    let positionHtml = ``;
+
+    let vRef = variant.ref.match(/.{1,15}/g).join('<br>');
+    let vAlt = variant.alt.match(/.{1,15}/g).join('<br>');
+
+    positionHtml += `${variant.chrName}:${format(',')(
+      variant.from - variant.chrOffset,
+    )}`;
+ 
+    const yValueField = trackOptions['yValue']['field'];
+    const yValue = variant[yValueField];
+    const yValueHtml = `${yValueField}: <strong>${yValue}</strong>`;
+
+    variantHtml += `<td colspan='4' style="background-color:#ececec;text-align: left !important;">
+        ${yValueHtml}
+      </td>`;
+
+    const borderCss = 'border: 1px solid #333333;';
+    mouseOverHtml +=
+      `<table style="margin-top:3px;${borderCss}">` +
+      `<tr style="background-color:#ececec;margin-top:3px;${borderCss}"><td colspan='4' style="text-align: left !important;">
+      Variant: <strong>${vRef} &rarr; ${vAlt}</strong> (${positionHtml})</td></tr>` +
+      `<tr style="margin-top:3px;${borderCss}">${variantHtml}</tr>` +
+      `</table>`;
+  
+  }
+  return mouseOverHtml;
 }
 
 
