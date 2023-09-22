@@ -33,7 +33,7 @@
 <body>
   <div id="demo"></div>
 </body>
-<!-- <script crossorigin src="https://unpkg.com/higlass-bigwig-datafetcher/dist/higlass-bigwig-datafetcher.min.js"></script> -->
+<!-- <script crossorigin src="https://unpkg.com/higlass-bigwig-datafetcher@0.1.2/dist/higlass-bigwig-datafetcher.min.js"></script> -->
 <script crossorigin src="https://unpkg.com/higlass-sequence/dist/higlass-sequence.js"></script>
 <script crossorigin src="https://unpkg.com/higlass-transcripts/dist/higlass-transcripts.js"></script>
 <script crossorigin src="https://unpkg.com/higlass-text/dist/higlass-text.js"></script>
@@ -63,8 +63,8 @@ const testViewConfig =
     {
 
       //"initialXDomain": [10000000, 10050000],
-      "initialXDomain": [40505137.344231196,
-        40518161.60856569],
+      "initialXDomain": [1254410.4166073129,
+        1255600.4198227832],
 
 
 
@@ -267,19 +267,183 @@ const testViewConfig =
             "height": 10,
             "options": {}
           },
+
+          // MSA
+          // {
+          //   "type": "geneList",
+          //   "options": {
+          //     //"includedGenes": ['ENSG00000186092','ENSG00000188976','ENSG00000131584']
+          //     "infoFields":[
+          //       {
+          //         "name": "END",
+          //         "type": "int"
+          //       },
+          //       {
+          //         "name": "SYMBOL",
+          //         "type": "string"
+          //       },
+          //       {
+          //         "name": "MASK_MISSENSE_BURDEN",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_MISSENSE_SKAT",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_MISSENSE_SKATO",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_MISSENSE_ACATV",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_MISSENSE_ACATO",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_CADD_BURDEN",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_CADD_SKAT",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_CADD_SKATO",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_CADD_ACATV",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_CADD_ACATO",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_MISSENSE_CADD_BURDEN",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_MISSENSE_CADD_SKAT",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_MISSENSE_CADD_SKATO",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_MISSENSE_CADD_ACATV",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_MISSENSE_CADD_ACATO",
+          //         "type": "float"
+          //       },
+
+          //       {
+          //         "name": "MASK_NONSENSE_SPLICE_BURDEN",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_NONSENSE_SPLICE_SKAT",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_NONSENSE_SPLICE_SKATO",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_NONSENSE_SPLICE_ACATV",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "MASK_NONSENSE_SPLICE_ACATO",
+          //         "type": "float"
+          //       },
+                
+          //     ],
+          //     "availableStatistics": ['BURDEN', 'SKAT', 'SKATO', 'ACATV', 'ACATO'],
+          //     "activeStatistic": 'BURDEN',
+          //     "availableMasks": [
+          //       'MASK_MISSENSE',
+          //       'MASK_CADD',
+          //       'MASK_MISSENSE_CADD',
+          //       'MASK_NONSENSE_SPLICE',
+          //     ],
+          //     "activeMask": 'MASK_CADD',
+          //     "yValue": {
+          //       "field": "MASK_CADD_BURDEN",
+          //     },
+          //     "project": "MSA",
+          //   },
+          //   "height": 120,
+          //   "uid": "FylkvVBTSumyJ959HT3-5B",
+          //   "data": {
+          //     "type": "vcf",
+          //     "vcfUrl": "genes.vcf.gz",
+          //     "tbiUrl": "genes.vcf.gz.tbi",
+          //     "chromSizesUrl": "https://aveit.s3.amazonaws.com/higlass/data/sequence/hg38.mod.chrom.sizes",
+          //   },
+          //   "width": 450
+          // },
+
+          // UDN
           {
             "type": "geneList",
             "options": {
               //"includedGenes": ['ENSG00000186092','ENSG00000188976','ENSG00000131584']
+              "infoFields":[
+                {
+                  "name": "END",
+                  "type": "int"
+                },
+                {
+                  "name": "SYMBOL",
+                  "type": "string"
+                },
+                {
+                  "name": "go_terms",
+                  "type": "string_list"
+                },
+                {
+                  "name": "kegg_category",
+                  "type": "string_list"
+                },
+                {
+                  "name": "DeNovoWEST_pvalue",
+                  "type": "float"
+                },
+                {
+                  "name": "biallelic_pvalue",
+                  "type": "float"
+                },
+              ],
+              "yValue": {
+                "field": "DeNovoWEST_pvalue",
+              },
+              "significanceTreshold": 1.3,
+              "yAxisLabel": {
+                "visible": true,
+                "text": "DeNovoWEST p",
+              },
+              // "filter": [
+              //   {
+              //     "field": "kegg_category",
+              //     "operator": "has_one_of",
+              //     "target": ["signal_transduction"]
+              //   }
+              // ],
+              "project": "UDN",
             },
             "height": 120,
             "uid": "FylkvVBTSumyJ959HT3-5B",
             "data": {
               "type": "vcf",
-              "vcfUrl": "https://cgap-training-main-application-cgap-training-wfoutput.s3.amazonaws.com/0fca9e00-4887-4fc3-8310-3328804fab6d/GAPFI81RUNG8.vcf.gz",
-              "tbiUrl": "https://cgap-training-main-application-cgap-training-wfoutput.s3.amazonaws.com/0fca9e00-4887-4fc3-8310-3328804fab6d/GAPFI81RUNG8.vcf.gz.tbi",
-              // "vcfUrl": "https://aveit-tibanna-wolf.s3.amazonaws.com/data/GAPFIXW3QIT5_gene_res.vcf.gz",
-              // "tbiUrl": "https://aveit-tibanna-wolf.s3.amazonaws.com/data/GAPFIXW3QIT5_gene_res.vcf.gz.tbi",
+              "vcfUrl": "https://aveit-tibanna-wolf.s3.amazonaws.com/data/udn/udn.genes.20230417.vcf.gz",
+              "tbiUrl": "https://aveit-tibanna-wolf.s3.amazonaws.com/data/udn/udn.genes.20230417.vcf.gz.tbi",
               "chromSizesUrl": "https://aveit.s3.amazonaws.com/higlass/data/sequence/hg38.mod.chrom.sizes",
             },
             "width": 450
@@ -309,43 +473,389 @@ const testViewConfig =
             "height": 10,
             "options": {}
           },
+
+          /////////////////
+          ////   MSA
+          /////////////////
+          // {
+          // "type": "cohort",
+          //   "options": {
+          //     // "variantDetailSource": {
+          //     //   "vcfUrl": "",
+          //     //   "tbiUrl": "",
+          //     // },
+          //     "infoFields":[
+          //       {
+          //         "name": "transcript",
+          //         "type": "string"
+          //       },
+          //       {
+          //         "name": "case_AC",
+          //         "type": "int"
+          //       },
+          //       {
+          //         "name": "case_AN",
+          //         "type": "int"
+          //       },
+          //       {
+          //         "name": "case_AF",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "control_AC",
+          //         "type": "int"
+          //       },
+          //       {
+          //         "name": "control_AN",
+          //         "type": "int"
+          //       },
+          //       {
+          //         "name": "control_AF",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "gnomADg_AC",
+          //         "type": "int"
+          //       },
+          //       {
+          //         "name": "gnomADg_AN",
+          //         "type": "int"
+          //       },
+          //       {
+          //         "name": "gnomADg_AF",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "gnomADe2_AC",
+          //         "type": "int"
+          //       },
+          //       {
+          //         "name": "gnomADe2_AN",
+          //         "type": "int"
+          //       },
+          //       {
+          //         "name": "gnomADe2_AF",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "most_severe_consequence",
+          //         "type": "string"
+          //       },
+          //       {
+          //         "name": "level_most_severe_consequence",
+          //         "type": "string"
+          //       },
+          //       {
+          //         "name": "cadd_raw_rs",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "cadd_phred",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "polyphen_pred",
+          //         "type": "string"
+          //       },
+          //       {
+          //         "name": "polyphen_rankscore",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "polyphen_score",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "gerp_score",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "gerp_rankscore",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "sift_rankscore",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "sift_pred",
+          //         "type": "string"
+          //       },
+          //       {
+          //         "name": "sift_score",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "spliceai_score_max",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "fisher_or_gnomADg",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "fisher_ml10p_gnomADg",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "fisher_or_gnomADe2",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "fisher_ml10p_gnomADe2",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "fisher_or_control",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "fisher_ml10p_control",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "regenie_ml10p",
+          //         "type": "float"
+          //       },
+          //       {
+          //         "name": "regenie_beta",
+          //         "type": "string"
+          //       },
+          //       {
+          //         "name": "regenie_chisq",
+          //         "type": "string"
+          //       },
+          //       {
+          //         "name": "regenie_se",
+          //         "type": "string"
+          //       },
+          //     ],
+          //     "filter": [
+          //       {
+          //         "field": "level_most_severe_consequence",
+          //         "operator": "is_one_of",
+          //         "target": ['HIGH', 'MODERATE', 'LOW', 'MODIFIER']
+          //       },
+          //       {
+          //         "field": "cadd_phred",
+          //         "operator": "is_between",
+          //         "target": [0.0, 1000.0]
+          //       }
+          //     ],
+          //     "yValue": {
+          //       "field": "fisher_ml10p_control"
+          //     },
+          //     "colorScale": {
+          //       "field": "level_most_severe_consequence",
+          //       "scale": [
+          //         {
+          //           "value": 'HIGH',
+          //           "color": '#ff0000',
+          //         },
+          //         {
+          //           "value": 'MODERATE',
+          //           "color": '#bf9c00',
+          //         },
+          //         {
+          //           "value": 'LOW',
+          //           "color": '#51abf5',
+          //         },
+          //         {
+          //           "value": 'MODIFIER',
+          //           "color": '#db4dff',
+          //         },
+          //       ]
+          //     },
+          //     "colorScaleLegend": {
+          //       "visible": true,
+          //       "values": ['HIGH', 'MODERATE', 'LOW', 'MODIFIER'],
+          //       //"values": ['HIGH', 'MODERATE', 'LOW']
+          //     },
+          //     "yAxisLabel": {
+          //       "visible": true,
+          //       "text": "-log10 (p-value)",
+          //     },
+          //     "project": "MSA",
+          //   },
+          //   "height": 150,
+          //   "uid": "FylkvVBTSumoJ959HT4-5B",
+          //   "data": {
+          //     "type": "vcf",
+          //     "vcfUrl": "",
+          //     "tbiUrl": "",
+          //     "chromSizesUrl": "https://aveit.s3.amazonaws.com/higlass/data/sequence/hg38.mod.chrom.sizes",
+          //   },
+          //   "width": 450
+          // },
+
+
+          /////////////////
+          ////   UDN
+          /////////////////
           {
           "type": "cohort",
             "options": {
-              "controlGroup": "control",
-              //"mainDisplay": 'deltaAF',
-              "mainDisplay": 'fisher',
-              // "variantDetailSource": {
-              //   "vcfUrl": "https://aveit-msa.s3.amazonaws.com/20230406/variant_details.vcf.gz",
-              //   "tbiUrl": "https://aveit-msa.s3.amazonaws.com/20230406/variant_details.vcf.gz.tbi",
-              // },
-              "colorScale": [
+              "variantDetailSource": {
+                  "vcfUrl": "samples.vcf.gz",
+                  "tbiUrl": "samples.vcf.gz.tbi"
+                },
+              "infoFields":[
                 {
-                  "level": 'HIGH',
-                  "color": '#ff0000',
+                  "name": "transcript",
+                  "type": "string"
                 },
                 {
-                  "level": 'MODERATE',
-                  "color": '#bf9c00',
+                  "name": "SYMBOL",
+                  "type": "string"
                 },
                 {
-                  "level": 'LOW',
-                  "color": '#51abf5',
+                  "name": "gene",
+                  "type": "string"
                 },
                 {
-                  "level": 'MODIFIER',
-                  "color": '#db4dff',
+                  "name": "case_AC",
+                  "type": "int"
+                },
+                {
+                  "name": "case_AN",
+                  "type": "int"
+                },
+                {
+                  "name": "case_AF",
+                  "type": "float"
+                },
+                {
+                  "name": "control_AC",
+                  "type": "int"
+                },
+                {
+                  "name": "control_AN",
+                  "type": "int"
+                },
+                {
+                  "name": "control_AF",
+                  "type": "float"
+                },
+                {
+                  "name": "gnomADpopmax_AF",
+                  "type": "float"
+                },
+                {
+                  "name": "most_severe_consequence",
+                  "type": "string"
+                },
+                {
+                  "name": "level_most_severe_consequence",
+                  "type": "string"
+                },
+                {
+                  "name": "cadd_raw",
+                  "type": "float"
+                },
+                {
+                  "name": "cadd_phred",
+                  "type": "float"
+                },
+                {
+                  "name": "cdna_change",
+                  "type": "string"
+                },
+                {
+                  "name": "prot_change",
+                  "type": "string"
+                },
+                {
+                  "name": "clinvar_alleleid",
+                  "type": "string"
+                },
+                {
+                  "name": "protein",
+                  "type": "string"
+                },
+                {
+                  "name": "go_terms",
+                  "type": "string"
+                },
+                {
+                  "name": "kegg_category",
+                  "type": "string_list"
+                },
+                {
+                  "name": "spliceai_al",
+                  "type": "float"
+                },
+                {
+                  "name": "spliceai_ag",
+                  "type": "float"
+                },
+                {
+                  "name": "spliceai_dg",
+                  "type": "float"
+                },
+                {
+                  "name": "spliceai_dl",
+                  "type": "float"
                 },
               ],
-              "consequenceLevels": ['HIGH', 'MODERATE'],
-              "showAlleleFrequencies": false
+              "filter": [
+                {
+                  "field": "level_most_severe_consequence",
+                  "operator": "is_one_of",
+                  "target": ['HIGH', 'MODERATE', 'LOW', 'MODIFIER']
+                },
+                {
+                  "field": "cadd_phred",
+                  "operator": "is_between",
+                  "target": [0.0, 1000.0]
+                },
+                // {
+                //   "field": "kegg_category",
+                //   "operator": "has_one_of",
+                //   "target": ["protein_folding_sorting_degradation"]
+                // }
+              ],
+              "yValue": {
+                "field": "cadd_phred",
+                //"transform": "-log10"
+              },
+              "colorScale": {
+                "field": "level_most_severe_consequence",
+                "scale": [
+                  {
+                    "value": 'HIGH',
+                    "color": '#ff0000',
+                  },
+                  {
+                    "value": 'MODERATE',
+                    "color": '#bf9c00',
+                  },
+                  {
+                    "value": 'LOW',
+                    "color": '#51abf5',
+                  },
+                  {
+                    "value": 'MODIFIER',
+                    "color": '#db4dff',
+                  },
+                ]
+              },
+              "colorScaleLegend": {
+                "visible": true,
+                "values": ['HIGH', 'MODERATE', 'LOW', 'MODIFIER'],
+                //"values": ['HIGH', 'MODERATE', 'LOW']
+              },
+              "yAxisLabel": {
+                "visible": true,
+                "text": "CADD Score",
+              },
+              "project": "UDN",
             },
-            "height": 415,
+            "height": 150,
             "uid": "FylkvVBTSumoJ959HT4-5B",
             "data": {
               "type": "vcf",
-              "vcfUrl": "https://cgap-training-main-application-cgap-training-wfoutput.s3.amazonaws.com/933049a0-429b-4d73-ad88-542ec120818c/GAPFIZ1Z3ZM2.vcf.gz",
-              "tbiUrl": "https://cgap-training-main-application-cgap-training-wfoutput.s3.amazonaws.com/933049a0-429b-4d73-ad88-542ec120818c/GAPFIZ1Z3ZM2.vcf.gz.tbi",
+              "vcfUrl": "https://aveit-tibanna-wolf.s3.amazonaws.com/data/udn/udn.variants.20230726.multires.vcf.gz",
+              "tbiUrl": "https://aveit-tibanna-wolf.s3.amazonaws.com/data/udn/udn.variants.20230726.multires.vcf.gz.tbi",
               "chromSizesUrl": "https://aveit.s3.amazonaws.com/higlass/data/sequence/hg38.mod.chrom.sizes",
             },
             "width": 450
@@ -374,54 +884,40 @@ const testViewConfig =
             "height": 10,
             "tilesetUid": "empty"
           },
-          {
-            "data": {
-              "type": "bbi",
-              "url": "https://cgap-training-main-application-cgap-training-wfoutput.s3.amazonaws.com/227b87ce-a6e6-43a7-a5f9-08bf9ec1f8f4/GAPFIKO5PAH4.vcf.gz",
-              "chromSizesUrl": "https://aveit.s3.amazonaws.com/higlass/data/sequence/hg38.chrom.sizes",
-            },
-            "uid": "bw",
-            "type": "bar",
-            "options": {
-              //"align": "bottom",
-              //"labelColor": "[glyph-color]",
-              "labelPosition": "topRight",
-              "labelLeftMargin": 0,
-              "labelRightMargin": 0,
-              "labelTopMargin": 0,
-              "labelBottomMargin": 0,
-              "labelShowResolution": false,
-              "labelShowAssembly": true,
-              //"axisLabelFormatting": "scientific",
-              "axisPositionHorizontal": null,
-              "barFillColor": "darkgreen",
-              "valueScaling": "linear",
-              "trackBorderWidth": 0,
-              "trackBorderColor": "black",
-              "labelTextOpacity": 0.4,
-              //"barOpacity": 1,
-              "valueScaleMin": 0,
-              //"valueScaleMax": 80,
-              "name": ""
-            },
-            "width": 20,
-            "height": 50
-          },
           // {
-          // "type": "cohort",
-          //   "options": {
-          //     "maxTileWidth": 1e8
-          //   },
-          //   "height": 200,
-          //   "uid": "cohort-sv",
           //   "data": {
-          //     "type": "vcf",
-          //     "vcfUrl": "https://aveit.s3.amazonaws.com/higlass/vcf/gnomad_sv_hg38_higlass.vcf.gz",
-          //     "tbiUrl": "https://aveit.s3.amazonaws.com/higlass/vcf/gnomad_sv_hg38_higlass.vcf.gz.tbi",
-          //     "chromSizesUrl": "https://aveit.s3.amazonaws.com/higlass/data/sequence/hg38.mod.chrom.sizes",
+          //     "type": "bbi",
+          //     "url": "coverage.bw",
+          //     "chromSizesUrl": "https://aveit.s3.amazonaws.com/higlass/data/sequence/hg38.chrom.sizes",
           //   },
-          //   "width": 470
-          // }
+          //   "uid": "bw",
+          //   "type": "bar",
+          //   "options": {
+          //     //"align": "bottom",
+          //     //"labelColor": "[glyph-color]",
+          //     "labelPosition": "topRight",
+          //     "labelLeftMargin": 0,
+          //     "labelRightMargin": 0,
+          //     "labelTopMargin": 0,
+          //     "labelBottomMargin": 0,
+          //     "labelShowResolution": false,
+          //     "labelShowAssembly": true,
+          //     //"axisLabelFormatting": "scientific",
+          //     "axisPositionHorizontal": null,
+          //     "barFillColor": "darkgreen",
+          //     "valueScaling": "linear",
+          //     "trackBorderWidth": 0,
+          //     "trackBorderColor": "black",
+          //     "labelTextOpacity": 0.4,
+          //     //"barOpacity": 1,
+          //     "valueScaleMin": 0,
+          //     //"valueScaleMax": 80,
+          //     "name": ""
+          //   },
+          //   "width": 20,
+          //   "height": 50
+          // },
+          
         ],
         "left": [],
         "center": [],

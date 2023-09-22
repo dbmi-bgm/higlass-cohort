@@ -3,7 +3,7 @@ import React from 'react';
 import { format } from 'd3-format';
 
 
-class VariantDetails extends React.Component {
+class VariantDetailsMSA extends React.Component {
   constructor(props) {
     super(props);
 
@@ -26,12 +26,15 @@ class VariantDetails extends React.Component {
   }
 
   loadData() {
-    this.dataFetcher.getVariantDetails(this.chr, this.pos).then((records) => {
-      if (!records.length) {
-        this.setState({ loading: false, variantNotFound: true });
-      }
-      this.setState({ loading: false, affectedIndividuals: records[0] });
-    });
+    if(this.dataFetcher){
+      this.dataFetcher.getVariantDetails(this.chr, this.pos).then((records) => {
+        if (!records.length) {
+          this.setState({ loading: false, variantNotFound: true });
+        }
+        this.setState({ loading: false, affectedIndividuals: records[0] });
+      });
+    }
+    
   }
 
   formatFloat(num) {
@@ -43,6 +46,7 @@ class VariantDetails extends React.Component {
   }
 
   render() {
+    
     let sampleInfoTable = <div></div>;
     if(!this.state.dataFetcherFound){
       sampleInfoTable = (
@@ -250,10 +254,10 @@ class VariantDetails extends React.Component {
   }
 }
 
-VariantDetails.defaultProps = {
+VariantDetailsMSA.defaultProps = {
   //position: 'top',
 };
 
-VariantDetails.propTypes = {};
+VariantDetailsMSA.propTypes = {};
 
-export default VariantDetails;
+export default VariantDetailsMSA;

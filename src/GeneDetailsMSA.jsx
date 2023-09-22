@@ -1,11 +1,10 @@
 import React from 'react';
 //import PropTypes from 'prop-types';
-import { SIGNIFICANCE_THRESHOLD } from './config';
 import { getMasksPerSnp } from './misc-utils';
 import { format } from 'd3-format';
 
 
-class GeneDetails extends React.Component {
+class GeneDetailsMSA extends React.Component {
   constructor(props) {
     super(props);
 
@@ -29,7 +28,7 @@ class GeneDetails extends React.Component {
         const statId = `${mask}_${stat}`;
         const statVal = this.segment[statId];
         let cssClass = "text-center px-2";
-        if(statVal !== undefined && statVal > SIGNIFICANCE_THRESHOLD){
+        if(statVal !== undefined && statVal > this.trackOptions.significanceTreshold){
           cssClass += " bg-success";
         }
         if(this.trackOptions.activeMask === mask && this.trackOptions.activeStatistic === stat){
@@ -98,10 +97,10 @@ class GeneDetails extends React.Component {
   }
 }
 
-GeneDetails.defaultProps = {
+GeneDetailsMSA.defaultProps = {
   //position: 'top',
 };
 
-GeneDetails.propTypes = {};
+GeneDetailsMSA.propTypes = {};
 
-export default GeneDetails;
+export default GeneDetailsMSA;

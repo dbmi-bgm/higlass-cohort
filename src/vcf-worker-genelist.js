@@ -8,7 +8,10 @@ import {
   initBase,
 } from './tileset-utils';
 import { COLOR_IXS } from './vcf-utils';
-import { MAX_VISIBLE_GENES, SIGNIFICANCE_THRESHOLD } from './config';
+import { MAX_VISIBLE_GENES } from './config';
+
+import { parseInfoField } from './vcf-utils';
+import { applySegmentFilter } from './vcf-worker-utils';
 
 function currTime() {
   const d = new Date();
@@ -16,11 +19,11 @@ function currTime() {
 }
 
 
-const vcfRecordToJson = (vcfRecord, chrName, options, chrOffset) => {
+const vcfRecordToJson = (vcfRecord, chrName, trackOptions, chrOffset) => {
   const info = vcfRecord['INFO'];
 
   // console.log(chrName, options, chrOffset);
-  // console.log(vcfRecord);
+  //console.log(vcfRecord);
   //console.log(info);
   const segment = {
     id: vcfRecord.ID[0],
@@ -31,18 +34,11 @@ const vcfRecordToJson = (vcfRecord, chrName, options, chrOffset) => {
     from: vcfRecord.POS + chrOffset,
     to: info.END[0] + chrOffset,
   };
-  options.availableMasks.forEach((m) => {
-    options.availableStatistics.forEach((t) => {
-      const test_id = `${m}_${t}`;
-      if(info[test_id]){
-        segment[test_id] = info[test_id][0];
-      }
-    });
-    // Add SNP lists
-    const snp_list_id = `${m}_SNPS`;
-    if(info[snp_list_id]){
-      segment[snp_list_id] = info[snp_list_id];
-    }
+
+  trackOptions.infoFields.forEach((infoField) => {
+    const infoFieldName = infoField["name"];
+    const infoFieldType = infoField["type"];
+    segment[infoFieldName] = parseInfoField(info[infoFieldName], 0, infoFieldType)
   });
  
   return segment;
@@ -283,12 +279,11 @@ const renderSegments = (
   let segmentList = Object.values(allSegments);
   let lastSegment = null;
 
-  const activeStat = trackOptions.activeStatistic;
-  const activeMask = trackOptions.activeMask;
-  const activeStatId = `${activeMask}_${activeStat}`;
+  const yValue = trackOptions['yValue']['field'];
 
   // Remove segment that don't have the current statistics for the current mask
-  segmentList = segmentList.filter((segment) => segment[activeStatId] !== undefined);
+  segmentList = segmentList.filter((segment) => (segment[yValue] !== undefined && segment[yValue] !== null));
+  segmentList = applySegmentFilter(segmentList, trackOptions);
 
   // We are "indexing" the genes by id for faster filtering later
   const includedGenes = {};
@@ -302,13 +297,13 @@ const renderSegments = (
 
   if (segmentList.length > MAX_VISIBLE_GENES) {
     segmentList = segmentList
-      .sort((a, b) => b[activeStatId] - a[activeStatId])
+      .sort((a, b) => b[yValue] - a[yValue])
       .slice(0, MAX_VISIBLE_GENES);
   }
   
   let activeStatMax = 0.0;
   segmentList.forEach((segment, j) => {
-    const activeStatVal = segment[activeStatId];
+    const activeStatVal = segment[yValue];
     activeStatMax = Math.max(activeStatMax, activeStatVal);
   });
 
@@ -323,7 +318,7 @@ const renderSegments = (
     }
     //console.log(segment);
     lastSegment = segment;
-    const activeStatVal = segment[activeStatId];
+    const activeStatVal = segment[yValue];
 
     const from = xScale(segment.from);
     const to = xScale(segment.to);
@@ -337,7 +332,7 @@ const renderSegments = (
 
     segment["isSignificant"] = false;
     let colorToUse = COLOR_IXS.LIGHTGREY;
-    if(activeStatVal > SIGNIFICANCE_THRESHOLD){
+    if(activeStatVal > trackOptions.significanceTreshold){
       colorToUse = COLOR_IXS.DARKGREEN;
       segment["isSignificant"] = true;
     }
