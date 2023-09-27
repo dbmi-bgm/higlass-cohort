@@ -16,7 +16,7 @@ These plugin tracks are meant to be used in a React setting. We refer to [this u
 ## GeneList track
 
 The GeneList track displays gene-level information from a VCF file along the genomic coordinate system. The data that is displayed is loaded from the INFO field
-of the VCF file. Which values are loaded the VCF and displayed is controlled in the track configuration (example below).
+of the VCF file. Which values are loaded the VCF and displayed is controlled in the track configuration/options (example below).
 
 ![image](https://github.com/dbmi-bgm/higlass-cohort/assets/53857412/b4081379-1987-4527-ba92-4fd6aafa8a7b)
 
@@ -71,4 +71,31 @@ The following is an example track configuration, which assumes that the VCF file
     "width": 450
 }
 ```
-We will have a closer look at the track options in the next section. In the track configuration the `type` must be set to `geneList`. The `data` determines the data source. The VCF need to be compress and tabix indexed.
+We will have a closer look at the track options in the next section. In the track configuration the `type` must be set to `geneList`. The `data` determines the data source. The VCF need to be compress and tabix indexed. Furthermore, it must be hosted on an accessible webserver.
+
+### Track options
+
+- `project`: If set, valid values are `MSA` and `UDN` currently. It determines what is shown when hovering over a gene and when clicking on a gene. If `project` is not set, we only show the gene name, the symbol and the y-value on hover. Clicking on a gene will have no effect in this case. If you want specific data to be displayed on hover and on click, you will have to extend the `getMouseOverHtml` and `clickDialog` functions. For the click functionality, you will have to implement a React component that is rendered within the model that opens. `GeneDetailsMSA.jsx` and `GeneDetailsUDN.jsx` are examples for this.
+- `availableStatistics` (MSA specific option): statistical tests that have been performed and are available in the VCF info field (e.g. `['BURDEN', 'SKAT', 'SKATO', 'ACATV', 'ACATO']`)
+- `activeStatistic` (MSA specific option): Test that is currently displayed
+- `availableMasks` (MSA specific option): available masks (e.g. `'MASK_MISSENSE', 'MASK_CADD', 'MASK_MISSENSE_CADD', 'MASK_NONSENSE_SPLICE',`)
+- `activeMask` (MSA specific option): active mask.
+- `includedGenes`: List of genes to display. All other genes won't be shown. E.g. `['ENSG00000186092','ENSG00000188976','ENSG00000131584']`
+- `infoFields`: List of all INFO fields to load from the VCF file. These fields can then be displayed in the mouseover of the click modal. See above for an example.
+- `filter`: Various filters can be defined to control the genes that are displayed. Each filter has a `field` (info field in the VCF), `operator` and a `target`. The currently supported operators are `is_one_of`, `has_one_of`, `is_between` and `is_equal`. If multiple filters are present we show those genes that satisfy all filters. In the example below, we are only showing those genes whose `DeNovoWEST_pvalue` is between 1.0 and 10.0 and whose `go_terms` include `t_cell_proliferation` or `protein_binding`.
+```
+"filter": [
+{
+   "field": "DeNovoWEST_pvalue",
+   "operator": "is_between",
+   "target": [1.0, 10.0]
+},
+{
+   "field": "go_terms",
+   "operator": "has_one_of",
+   "target": ["t_cell_proliferation", "protein_binding"]
+}]
+```
+- `yValue`: the info field to use for the vertcal axis.
+- `significanceTreshold`: If `yvalue` is greater than this value, the gene will be marked as `statistically significant` 
+  
