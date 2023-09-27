@@ -119,7 +119,7 @@ chr1    13453   chr1_13453_T_C  T       C       .       PASS    cadd_phred=12.41
 ```
 `POS` determines the horizonal position of the variants along the genome. A numeric value from the `INFO` field determines the height of the lollipop. In our example above we are using the `cadd_phred` value. The lollipops in the display can also be color coded. In this case it is determined by the `level_most_severe_consequence` value.
 
-I it is important to note, that a VCF of this form will not be compatible with the Cohort track. The track expect a **multiresolution version** of this file to enable genome wide browser without the need to load the entire file into memory. The [Higlass Data](https://github.com/dbmi-bgm/higlass-data) package can be used to create a Cohort track compatible VCF.
+It is important to note, that a VCF of this form will not be compatible with the Cohort track. The track expect a **multiresolution version** of this file to enable genome wide browser without the need to load the entire file into memory. The [Higlass Data](https://github.com/dbmi-bgm/higlass-data) package can be used to create a Cohort track compatible VCF.
 
 ### Track configuration
 The following is an example track configuration, which assumes that the VCF file contained the data is of the form above
